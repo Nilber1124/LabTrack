@@ -6,7 +6,7 @@ namespace LabTrack.Tests.Models
     public class ModelosValidacionTests
     {
         private static Usuario UsuarioValido() => new() { Codigo = "20231458", Nombre = "Valeria Quispe", PasswordHash = "hash", IdRol = 1 };
-        private static Equipo EquipoValido() => new() { Nombre = "Laptop Dell", CodigoInventario = "LT-0231", IdCategoria = 1 };
+        private static Equipo EquipoValido() => new() { Nombre = "Laptop Dell", CodigoInventario = "LT-0231", IdCategoria = 1, Laboratorio = "Lab. A-204" };
         private static Reserva ReservaValida() => new() { IdUsuario = 1, IdEquipo = 1 };
 
         [Fact]

@@ -31,6 +31,18 @@
         }, 1000);
     }
 
+    // «Ingresar» se habilita cuando ambos campos tienen contenido.
+    const codigo = document.getElementById("Codigo");
+    const botonIngresar = document.getElementById("boton-ingresar");
+    if (!alerta) {
+        const actualizarBoton = () => {
+            botonIngresar.disabled = !codigo.value.trim() || !clave.value;
+        };
+        codigo.addEventListener("input", actualizarBoton);
+        clave.addEventListener("input", actualizarBoton);
+        actualizarBoton();
+    }
+
     // Evita envíos dobles; el servidor sigue validando cada intento.
     const formulario = document.getElementById("form-login");
     const boton = document.getElementById("boton-ingresar");

@@ -1,7 +1,8 @@
 @using LabTrack.Reglas
 @{
     var controlador = ViewContext.RouteData.Values["controller"] as string;
-    var esEncargado = User.IsInRole(NombresRol.Encargado);
+    var esAdministrador = User.IsInRole(NombresRol.Administrador);
+    var esEncargado = User.IsInRole(NombresRol.Encargado) || esAdministrador;
     var esEstudiante = User.IsInRole(NombresRol.Estudiante);
     // Reservar un equipo forma parte del recorrido del catálogo.
     var seccion = ViewContext.RouteData.Values["action"] as string == "Crear" ? "Catalogo" : controlador;
@@ -29,9 +30,13 @@
             }
             @if (esEncargado)
             {
-                <a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Solicitudes</a>
+                <a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Solicitudes@(await Component.InvokeAsync("ContadorGestion", new { tipo = "solicitudes" }))</a>
                 <a asp-controller="Devoluciones" asp-action="Index" aria-current="@Actual("Devoluciones")">Devoluciones</a>
-                <a asp-controller="Penalizados" asp-action="Index" aria-current="@Actual("Penalizados")">Penalizados</a>
+                <a asp-controller="Penalizados" asp-action="Index" aria-current="@Actual("Penalizados")">Penalizados@(await Component.InvokeAsync("ContadorGestion", new { tipo = "penalizados" }))</a>
+            }
+            @if (esAdministrador)
+            {
+                <a asp-controller="Equipos" asp-action="Index" aria-current="@Actual("Equipos")">Equipos</a>
             }
         </nav>
         @if (User.Identity?.IsAuthenticated == true)

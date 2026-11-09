@@ -73,8 +73,20 @@ namespace LabTrack.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<bool>("DeBaja")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("IdCategoria")
                         .HasColumnType("int");
+
+                    b.Property<string>("Laboratorio")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -113,6 +125,10 @@ namespace LabTrack.Migrations
                     b.Property<DateTime?>("FechaDevolucionReal")
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("FechaSolicitud")
+                        .HasPrecision(0)
+                        .HasColumnType("datetime2(0)");
 
                     b.Property<DateTime>("Fin")
                         .HasPrecision(0)
@@ -183,6 +199,11 @@ namespace LabTrack.Migrations
                         {
                             IdRol = 2,
                             Nombre = "ENCARGADO"
+                        },
+                        new
+                        {
+                            IdRol = 3,
+                            Nombre = "ADMINISTRADOR"
                         });
                 });
 

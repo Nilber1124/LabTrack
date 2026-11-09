@@ -13,10 +13,36 @@ namespace LabTrack.Tests.Services
         {
         }
 
-        private async Task<CatalogoViewModel> ListarAsync(string? categoria = null, int pagina = 1)
+        private async Task<CatalogoViewModel> ListarAsync(string? categoria = null, int pagina = 1, string? busqueda = null)
         {
             await using var contexto = BaseDatos.CrearContexto();
-            return await new CatalogoService(contexto, Reloj).ListarAsync(categoria, pagina);
+            return await new CatalogoService(contexto, Reloj).ListarAsync(categoria, pagina, busqueda);
+        }
+
+        [Theory]
+        [Trait("HU", "HU-02")]
+        [Trait("CA", "CA-05")]
+        [InlineData("Router")]
+        [InlineData("RE-1")]
+        public async Task ListarAsync_Busqueda_FiltraPorNombreOCodigo(string busqueda)
+        {
+            await CrearEquipoAsync("RE-1", IdRedes, "Router Cisco");
+            await CrearEquipoAsync("CO-1", IdComputo, "Laptop");
+
+            var equipo = Assert.Single((await ListarAsync(busqueda: busqueda)).Equipos);
+
+            Assert.Equal("RE-1", equipo.CodigoInventario);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-02")]
+        [Trait("CA", "CA-05")]
+        public async Task ListarAsync_BusquedaYCategoria_AplicaAmbas()
+        {
+            await CrearEquipoAsync("RE-1", IdRedes, "Router Cisco");
+            await CrearEquipoAsync("CO-1", IdComputo, "Router de prueba");
+
+            Assert.Equal("RE-1", Assert.Single((await ListarAsync("Redes", busqueda: "Router")).Equipos).CodigoInventario);
         }
 
         private async Task CrearUnoPorCategoriaAsync()

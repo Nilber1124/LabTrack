@@ -12,13 +12,34 @@
 
 <div class="reserva">
     <aside class="reserva-equipo">
-        <partial name="_FotoEquipo" />
+        <partial name="_FotoEquipo" model="new FotoEquipoViewModel(Model.FotoUrl, Model.NombreEquipo)" />
         <div class="reserva-equipo-cabecera">
             <span class="filtros-titulo">@Model.Categoria</span>
             <partial name="_Badge" model="@(Model.EquipoDisponible ? "disponible" : "prestado")" />
         </div>
         <h3>@Model.NombreEquipo</h3>
-        <span class="codigo">Inv. @Model.CodigoInventario</span>
+        <span class="codigo">Inv. @Model.CodigoInventario · @Model.Laboratorio</span>
+        <div class="ocupacion" id="ocupacion">
+            <span class="filtros-titulo">Ocupación · @Formato.Fecha(Model.FechaOcupacion.ToDateTime(TimeOnly.MinValue))</span>
+            <div class="ocupacion-barra">
+                @foreach (var bloque in Model.Ocupacion)
+                {
+                    <div class="ocupacion-bloque" style="left:@bloque.Izquierda;width:@bloque.Ancho" title="Aprobada @bloque.Horario"></div>
+                }
+                <div class="ocupacion-seleccion" id="ocupacion-seleccion" hidden></div>
+            </div>
+            <div class="ocupacion-escala" aria-hidden="true"><span>07</span><span>09</span><span>11</span><span>13</span><span>15</span><span>17</span><span>19</span><span>21</span></div>
+            <span class="ayuda">
+                @if (Model.Ocupacion.Count == 0)
+                {
+                    <text>Sin reservas aprobadas · todo el día está libre.</text>
+                }
+                else
+                {
+                    <text>Aprobada @string.Join(", ", Model.Ocupacion.Select(b => b.Horario)) · el resto está libre.</text>
+                }
+            </span>
+        </div>
     </aside>
 
     @if (Model.EstudiantePenalizado)
@@ -73,6 +94,12 @@
         </div>
 
         <div class="error-campo" id="error-horas" role="alert" hidden>La hora de fin debe ser posterior a la de inicio</div>
+        <div class="ayuda" id="duracion-reserva"></div>
+        @if (Model.SugerenciaInicio is { } sugerenciaInicio && Model.SugerenciaFin is { } sugerenciaFin)
+        {
+            <button type="button" class="btn btn-secundario" id="usar-sugerencia"
+                    data-inicio="@sugerenciaInicio.ToString("HH:mm")" data-fin="@sugerenciaFin.ToString("HH:mm")">Usar @sugerenciaInicio.ToString("HH:mm") – @sugerenciaFin.ToString("HH:mm")</button>
+        }
 
         <div class="reserva-comprobaciones">
             <b>Al enviar comprobamos</b>

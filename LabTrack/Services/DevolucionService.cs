@@ -47,6 +47,7 @@ namespace LabTrack.Services
                 .Select(r => new ReservaActivaViewModel
                 {
                     IdReserva = r.IdReserva,
+                    IdUsuario = r.IdUsuario,
                     Estudiante = r.Usuario.Nombre,
                     CodigoEstudiante = r.Usuario.Codigo,
                     Equipo = r.Equipo.Nombre,
@@ -193,6 +194,56 @@ namespace LabTrack.Services
             await _context.SaveChangesAsync(cancellationToken);
 
             return ResultadoOperacion.Ok($"Penalización levantada. {usuario.Nombre} ya puede reservar equipos.");
+        }
+
+        public Task<int> ContarSolicitudesPendientesAsync(CancellationToken cancellationToken = default)
+            => _context.Reservas.AsNoTracking().CountAsync(r => r.Estado == EstadoReserva.Pendiente, cancellationToken);
+
+        public Task<int> ContarPenalizadosAsync(CancellationToken cancellationToken = default)
+            => _context.Usuarios.AsNoTracking().CountAsync(u => u.Estado == EstadoUsuario.Penalizado, cancellationToken);
+
+        public async Task<FichaEstudianteViewModel?> ObtenerFichaAsync(int idUsuario, CancellationToken cancellationToken = default)
+        {
+            var fila = await _context.Usuarios.AsNoTracking()
+                .Where(u => u.IdUsuario == idUsuario && u.Rol.Nombre == NombresRol.Estudiante)
+                .Select(u => new
+                {
+                    u.IdUsuario,
+                    u.Nombre,
+                    u.Codigo,
+                    u.Estado,
+                    Totales = u.Reservas.Count,
+                    Tardias = u.Reservas.Count(r => r.Estado == EstadoReserva.Devuelta && r.FechaDevolucionReal > r.Fin),
+                    Activa = u.Reservas
+                        .Where(r => r.Estado == EstadoReserva.Aprobada)
+                        .Select(r => r.Equipo.CodigoInventario)
+                        .FirstOrDefault(),
+                    Ultima = u.Reservas
+                        .Where(r => r.Estado == EstadoReserva.Devuelta && r.FechaDevolucionReal > r.Fin)
+                        .OrderByDescending(r => r.FechaDevolucionReal)
+                        .Select(r => new { r.Equipo.CodigoInventario, r.Fin, r.FechaDevolucionReal })
+                        .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (fila is null)
+            {
+                return null;
+            }
+
+            return new FichaEstudianteViewModel
+            {
+                IdUsuario = fila.IdUsuario,
+                Nombre = fila.Nombre,
+                Codigo = fila.Codigo,
+                Estado = fila.Estado,
+                ReservasTotales = fila.Totales,
+                DevolucionesTardias = fila.Tardias,
+                ReservaActiva = fila.Activa,
+                DetallePenalizacion = fila.Estado != EstadoUsuario.Penalizado || fila.Ultima is null
+                    ? null
+                    : $"Desde {Formato.FechaHora(fila.Ultima.FechaDevolucionReal!.Value)}. Devolución tardía de {fila.Ultima.CodigoInventario} ({Formato.Duracion(fila.Ultima.FechaDevolucionReal.Value - fila.Ultima.Fin)}). No puede reservar hasta que se levante."
+            };
         }
 
         private static void DescribirSituacion(ReservaActivaViewModel reserva, DateTime ahora)

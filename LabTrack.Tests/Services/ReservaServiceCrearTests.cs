@@ -42,6 +42,7 @@ namespace LabTrack.Tests.Services
 
             await using var contexto = BaseDatos.CrearContexto();
             var reserva = await contexto.Reservas.AsNoTracking().SingleAsync();
+            Assert.Equal(Ahora, reserva.FechaSolicitud);
             Assert.True(resultado.Exitoso);
             Assert.Equal(EstadoReserva.Pendiente, reserva.Estado);
             Assert.Equal((HoraManana(10), HoraManana(12)), (reserva.Inicio, reserva.Fin));
@@ -177,7 +178,55 @@ namespace LabTrack.Tests.Services
 
             Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
             Assert.Equal(Mensajes.ChoqueConAprobada, resultado.Mensaje);
+            Assert.StartsWith("Ocupado de 14:00 a 16:00.", resultado.Aviso);
             Assert.Equal(1, await ContarReservasAsync());
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public async Task CrearAsync_Choque_SugierePrimeraFranjaLibre()
+        {
+            var equipo = await EquipoConAprobadaAsync();
+            var estudiante = await CrearUsuarioAsync("E1");
+
+            var resultado = await CrearAsync(estudiante.IdUsuario, equipo.IdEquipo, "14:00", "15:00");
+
+            Assert.Equal("Ocupado de 14:00 a 16:00. Primera franja libre: 16:00.", resultado.Aviso);
+            Assert.Equal((new TimeOnly(16, 0), new TimeOnly(17, 0)), (resultado.SugerenciaInicio!.Value, resultado.SugerenciaFin!.Value));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public async Task CrearAsync_ChoqueSinFranjaDentroDelHorario_NoSugiere()
+        {
+            var otro = await CrearUsuarioAsync("OTRO");
+            var equipo = await CrearEquipoAsync("LT-1");
+            await CrearReservaAsync(otro.IdUsuario, equipo.IdEquipo, HoraManana(14), HoraManana(21), EstadoReserva.Aprobada);
+            var estudiante = await CrearUsuarioAsync("E1");
+
+            var resultado = await CrearAsync(estudiante.IdUsuario, equipo.IdEquipo, "15:00", "16:00");
+
+            Assert.Equal("Ocupado de 14:00 a 21:00.", resultado.Aviso);
+            Assert.Null(resultado.SugerenciaInicio);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public async Task ObtenerFormularioAsync_ConFecha_DevuelveSoloAprobadasDeEseDia()
+        {
+            var equipo = await EquipoConAprobadaAsync();
+            var estudiante = await CrearUsuarioAsync("E1");
+
+            await using var contexto = BaseDatos.CrearContexto();
+            var servicio = new ReservaService(contexto, Reloj);
+            var conReserva = await servicio.ObtenerFormularioAsync(estudiante.IdUsuario, equipo.IdEquipo, Manana);
+            var libre = await servicio.ObtenerFormularioAsync(estudiante.IdUsuario, equipo.IdEquipo, Manana.AddDays(1));
+
+            Assert.Equal("14:00 – 16:00", Assert.Single(conReserva!.Ocupacion).Horario);
+            Assert.Empty(libre!.Ocupacion);
         }
 
         [Theory]

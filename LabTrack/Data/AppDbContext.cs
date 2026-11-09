@@ -89,6 +89,7 @@ namespace LabTrack.Data
 
             modelBuilder.Entity<Reserva>().Property(r => r.Inicio).HasPrecision(0);
             modelBuilder.Entity<Reserva>().Property(r => r.Fin).HasPrecision(0);
+            modelBuilder.Entity<Reserva>().Property(r => r.FechaSolicitud).HasPrecision(0);
 
             // Con milisegundos para distinguir una devolución posterior a la hora de fin (CA-16).
             modelBuilder.Entity<Reserva>().Property(r => r.FechaDevolucionReal).HasPrecision(3);
@@ -116,7 +117,8 @@ namespace LabTrack.Data
         {
             modelBuilder.Entity<Rol>().HasData(
                 new Rol { IdRol = 1, Nombre = NombresRol.Estudiante },
-                new Rol { IdRol = 2, Nombre = NombresRol.Encargado });
+                new Rol { IdRol = 2, Nombre = NombresRol.Encargado },
+                new Rol { IdRol = 3, Nombre = NombresRol.Administrador });
 
             modelBuilder.Entity<Categoria>().HasData(
                 new Categoria { IdCategoria = 1, Nombre = "Cómputo" },

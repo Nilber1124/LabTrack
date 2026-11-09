@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LabTrack.Controllers
 {
-    [Authorize(Roles = NombresRol.Encargado)]
+    [Authorize(Roles = NombresRol.GestionLaboratorio)]
     public class DevolucionesController : Controller
     {
         private readonly IDevolucionService _devoluciones;
@@ -17,9 +17,17 @@ namespace LabTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? busqueda, int pagina = 1, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Index(string? busqueda, int pagina = 1, int? idUsuario = null, CancellationToken cancellationToken = default)
         {
-            return View(await _devoluciones.ListarActivasAsync(busqueda, pagina, cancellationToken));
+            var modelo = await _devoluciones.ListarActivasAsync(busqueda, pagina, cancellationToken);
+
+            var estudiante = idUsuario ?? modelo.Reservas.FirstOrDefault()?.IdUsuario;
+            if (estudiante is not null)
+            {
+                modelo.Ficha = await _devoluciones.ObtenerFichaAsync(estudiante.Value, cancellationToken);
+            }
+
+            return View(modelo);
         }
 
         [HttpPost]

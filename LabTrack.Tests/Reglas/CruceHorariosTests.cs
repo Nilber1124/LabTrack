@@ -46,6 +46,34 @@ namespace LabTrack.Tests.Reglas
             Assert.True(CruceHorarios.SeCruzan(H(13), H(14, 1), H(14), H(16)));
         }
 
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public void PrimeraFranjaLibre_SinOtrosBloques_DevuelveElInicioBuscado()
+        {
+            Assert.Equal(H(16), CruceHorarios.PrimeraFranjaLibre([(H(14), H(16))], H(16), TimeSpan.FromHours(1)));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public void PrimeraFranjaLibre_BloquesEncadenados_SaltaHastaElHueco()
+        {
+            var bloques = new[] { (H(18), H(19)), (H(14), H(16)), (H(16), H(18)) };
+
+            Assert.Equal(H(19), CruceHorarios.PrimeraFranjaLibre(bloques, H(16), TimeSpan.FromHours(1)));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public void PrimeraFranjaLibre_HuecoInsuficiente_LoDescarta()
+        {
+            var bloques = new[] { (H(16, 30), H(18)) };
+
+            Assert.Equal(H(18), CruceHorarios.PrimeraFranjaLibre(bloques, H(16), TimeSpan.FromHours(1)));
+        }
+
         [Theory]
         [Trait("HU", "HU-03")]
         [Trait("CA", "CA-09")]

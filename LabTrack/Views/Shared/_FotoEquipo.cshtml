@@ -1,2 +1,9 @@
-@* Marcador hasta conectar las fotos reales de cada equipo. *@
-<div class="foto-equipo" aria-hidden="true"><span>foto del equipo</span></div>
+@model FotoEquipoViewModel
+@if (Model.Url is null)
+{
+    <div class="foto-equipo" aria-hidden="true"><span>foto del equipo</span></div>
+}
+else
+{
+    <img class="foto-equipo foto-equipo-real" src="@Model.Url" alt="@Model.Descripcion" loading="lazy" />
+}

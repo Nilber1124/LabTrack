@@ -16,6 +16,8 @@
     </form>
 </div>
 
+<div class="devoluciones-panel">
+<div class="devoluciones-lista">
 @if (Model.Reservas.Count == 0)
 {
     <div class="vacio" role="status">
@@ -44,7 +46,7 @@ else
                 <tr class="@(reserva.Vencida ? "tabla-vencida" : null)"
                     data-estudiante="@reserva.Estudiante" data-equipo="@reserva.Equipo (@reserva.CodigoInventario)"
                     data-fin="@Formato.Hora(reserva.Fin)" data-vencida="@(reserva.Vencida ? "true" : "false")">
-                    <td data-etiqueta="Estudiante"><b>@reserva.Estudiante</b><small>@reserva.CodigoEstudiante</small></td>
+                    <td data-etiqueta="Estudiante"><b><a asp-action="Index" asp-route-idUsuario="@reserva.IdUsuario" asp-route-busqueda="@Model.Busqueda" asp-route-pagina="@Model.Paginacion.Pagina">@reserva.Estudiante</a></b><small>@reserva.CodigoEstudiante</small></td>
                     <td data-etiqueta="Equipo">@reserva.Equipo<small>@reserva.CodigoInventario</small></td>
                     <td data-etiqueta="Fin programado">@Formato.Fecha(reserva.Fin) · @Formato.Hora(reserva.Fin)<small>@reserva.Nota</small></td>
                     <td data-etiqueta="Estado"><partial name="_Badge" model="@reserva.Situacion" /></td>
@@ -60,6 +62,38 @@ else
     </table>
     <partial name="_Paginacion" model="Model.Paginacion" />
 }
+</div>
+
+@if (Model.Ficha is { } ficha)
+{
+    <aside class="ficha" aria-label="Ficha del estudiante">
+        <span class="filtros-titulo">Ficha del estudiante</span>
+        <div class="ficha-cabecera">
+            <span class="cuenta-avatar" aria-hidden="true">@ficha.Iniciales</span>
+            <div><b>@ficha.Nombre</b><div class="codigo">@ficha.Codigo</div></div>
+        </div>
+        @if (ficha.Estado == EstadoUsuario.Penalizado)
+        {
+            <div class="ficha-penalizado">
+                <partial name="_Badge" model="@("penalizado")" />
+                @if (ficha.DetallePenalizacion is not null)
+                {
+                    <span>@ficha.DetallePenalizacion</span>
+                }
+            </div>
+        }
+        <dl class="resumen">
+            <dt>Reservas totales</dt><dd><b>@ficha.ReservasTotales</b></dd>
+            <dt>Devoluciones tardías</dt><dd><b>@ficha.DevolucionesTardias</b></dd>
+            <dt>Reserva activa</dt><dd><b>@(ficha.ReservaActiva ?? "—")</b></dd>
+        </dl>
+        @if (ficha.Estado == EstadoUsuario.Penalizado)
+        {
+            <a asp-controller="Penalizados" asp-action="Index" asp-route-busqueda="@ficha.Codigo">Ver en Penalizados →</a>
+        }
+    </aside>
+}
+</div>
 
 <dialog id="modal-devolucion" class="modal" aria-labelledby="devolucion-titulo">
     <h2 id="devolucion-titulo">¿Confirmar devolución?</h2>
@@ -75,9 +109,6 @@ else
     </div>
 </dialog>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/devoluciones.css" asp-append-version="true" />
-}
 @section Scripts {
     <script src="~/js/devoluciones.js" asp-append-version="true"></script>
 }

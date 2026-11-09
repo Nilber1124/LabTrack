@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LabTrack.Controllers
 {
-    [Authorize(Roles = NombresRol.Encargado)]
+    [Authorize(Roles = NombresRol.GestionLaboratorio)]
     public class PenalizadosController : Controller
     {
         private readonly IDevolucionService _devoluciones;

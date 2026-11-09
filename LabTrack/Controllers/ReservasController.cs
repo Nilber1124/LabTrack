@@ -31,7 +31,7 @@ namespace LabTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Crear(int idEquipo, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Crear(int idEquipo, DateOnly? fecha = null, CancellationToken cancellationToken = default)
         {
             var idUsuario = User.ObtenerIdUsuario();
             if (idUsuario is null)
@@ -39,7 +39,7 @@ namespace LabTrack.Controllers
                 return Forbid();
             }
 
-            var modelo = await _reservas.ObtenerFormularioAsync(idUsuario.Value, idEquipo, cancellationToken);
+            var modelo = await _reservas.ObtenerFormularioAsync(idUsuario.Value, idEquipo, fecha, cancellationToken);
             if (modelo is null)
             {
                 return NotFound();
@@ -57,7 +57,7 @@ namespace LabTrack.Controllers
                 return RedirectToAction("Index", "Catalogo");
             }
 
-            modelo.Fecha = modelo.FechaMinima;
+            modelo.Fecha = modelo.FechaOcupacion;
             return View(modelo);
         }
 
@@ -89,13 +89,20 @@ namespace LabTrack.Controllers
                 return NotFound();
             }
 
+            modelo.SugerenciaInicio = resultado.SugerenciaInicio;
+            modelo.SugerenciaFin = resultado.SugerenciaFin;
             ModelState.AddModelError(string.Empty, resultado.Mensaje);
+            if (resultado.Aviso is not null)
+            {
+                ModelState.AddModelError(string.Empty, resultado.Aviso);
+            }
+
             return await VolverAlFormularioAsync(idUsuario.Value, modelo, cancellationToken);
         }
 
         private async Task<IActionResult> VolverAlFormularioAsync(int idUsuario, CrearReservaViewModel modelo, CancellationToken cancellationToken)
         {
-            var datos = await _reservas.ObtenerFormularioAsync(idUsuario, modelo.IdEquipo, cancellationToken);
+            var datos = await _reservas.ObtenerFormularioAsync(idUsuario, modelo.IdEquipo, modelo.Fecha, cancellationToken);
             if (datos is null)
             {
                 return NotFound();
@@ -104,8 +111,12 @@ namespace LabTrack.Controllers
             modelo.NombreEquipo = datos.NombreEquipo;
             modelo.CodigoInventario = datos.CodigoInventario;
             modelo.Categoria = datos.Categoria;
+            modelo.Laboratorio = datos.Laboratorio;
+            modelo.FotoUrl = datos.FotoUrl;
             modelo.EquipoDisponible = datos.EquipoDisponible;
             modelo.FechaMinima = datos.FechaMinima;
+            modelo.FechaOcupacion = datos.FechaOcupacion;
+            modelo.Ocupacion = datos.Ocupacion;
             modelo.EstudiantePenalizado = datos.EstudiantePenalizado;
             modelo.MotivoPenalizacion = datos.MotivoPenalizacion;
             return View(modelo);

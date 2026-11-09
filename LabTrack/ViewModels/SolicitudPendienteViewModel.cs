@@ -9,5 +9,7 @@ namespace LabTrack.ViewModels
         public string CodigoInventario { get; set; } = string.Empty;
         public DateTime Inicio { get; set; }
         public DateTime Fin { get; set; }
+        public DateTime? FechaSolicitud { get; set; }
+        public string Recibida { get; set; } = "—";
     }
 }

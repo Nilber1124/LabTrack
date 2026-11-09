@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LabTrack.Controllers
 {
-    [Authorize(Roles = NombresRol.Encargado)]
+    [Authorize(Roles = NombresRol.GestionLaboratorio)]
     public class SolicitudesController : Controller
     {
         private readonly IReservaService _reservas;

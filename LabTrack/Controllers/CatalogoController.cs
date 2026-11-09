@@ -16,9 +16,9 @@ namespace LabTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? categoria, int pagina = 1, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Index(string? categoria, int pagina = 1, string? busqueda = null, CancellationToken cancellationToken = default)
         {
-            var modelo = await _catalogo.ListarAsync(categoria, pagina, cancellationToken);
+            var modelo = await _catalogo.ListarAsync(categoria, pagina, busqueda, cancellationToken);
             if (modelo.SinResultados)
             {
                 modelo.MensajeVacio = Mensajes.SinEquiposEnCategoria;

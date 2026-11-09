@@ -121,6 +121,77 @@ namespace LabTrack.Tests.Services
         [Fact]
         [Trait("HU", "HU-05")]
         [Trait("CA", "CA-16")]
+        public async Task ContarPenalizadosAsync_ConPenalizados_LosCuenta()
+        {
+            await PenalizarAsync();
+            await CrearUsuarioAsync("ACTIVO");
+
+            await using var contexto = BaseDatos.CrearContexto();
+
+            Assert.Equal(1, await new DevolucionService(contexto, Reloj).ContarPenalizadosAsync());
+        }
+
+        [Fact]
+        [Trait("HU", "HU-04")]
+        [Trait("CA", "CA-11")]
+        public async Task ContarSolicitudesPendientesAsync_VariosEstados_CuentaSoloPendientes()
+        {
+            var estudiante = await CrearUsuarioAsync("E1");
+            var equipo = await CrearEquipoAsync("LT-1");
+            await CrearReservaAsync(estudiante.IdUsuario, equipo.IdEquipo, HoraManana(8), HoraManana(9));
+            await CrearReservaAsync(estudiante.IdUsuario, equipo.IdEquipo, HoraManana(10), HoraManana(11), EstadoReserva.Rechazada);
+
+            await using var contexto = BaseDatos.CrearContexto();
+
+            Assert.Equal(1, await new DevolucionService(contexto, Reloj).ContarSolicitudesPendientesAsync());
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
+        public async Task ObtenerFichaAsync_EstudiantePenalizado_MuestraTotalesYDetalle()
+        {
+            var estudiante = await PenalizarAsync();
+
+            await using var contexto = BaseDatos.CrearContexto();
+            var ficha = await new DevolucionService(contexto, Reloj).ObtenerFichaAsync(estudiante.IdUsuario);
+
+            Assert.Equal((1, 1), (ficha!.ReservasTotales, ficha.DevolucionesTardias));
+            Assert.Contains("Devolución tardía de LT-1 (45 min)", ficha.DetallePenalizacion);
+            Assert.Null(ficha.ReservaActiva);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-14")]
+        public async Task ObtenerFichaAsync_ConReservaActiva_MuestraSuEquipo()
+        {
+            var estudiante = await CrearUsuarioAsync("E1");
+            var equipo = await CrearEquipoAsync("OS-0112");
+            await CrearReservaAsync(estudiante.IdUsuario, equipo.IdEquipo, HoraManana(8), HoraManana(9), EstadoReserva.Aprobada);
+
+            await using var contexto = BaseDatos.CrearContexto();
+            var ficha = await new DevolucionService(contexto, Reloj).ObtenerFichaAsync(estudiante.IdUsuario);
+
+            Assert.Equal("OS-0112", ficha!.ReservaActiva);
+            Assert.Null(ficha.DetallePenalizacion);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-14")]
+        public async Task ObtenerFichaAsync_NoEsEstudiante_DevuelveNull()
+        {
+            var encargado = await CrearUsuarioAsync("ENC", idRol: IdRolEncargado);
+
+            await using var contexto = BaseDatos.CrearContexto();
+
+            Assert.Null(await new DevolucionService(contexto, Reloj).ObtenerFichaAsync(encargado.IdUsuario));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
         public async Task LevantarPenalizacionAsync_Inexistente_DevuelveNoEncontrado()
         {
             Assert.Equal(TipoResultado.NoEncontrado, (await LevantarAsync(999_999)).Tipo);

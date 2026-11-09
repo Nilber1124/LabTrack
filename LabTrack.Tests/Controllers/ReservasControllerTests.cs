@@ -36,7 +36,7 @@ namespace LabTrack.Tests.Controllers
                 .Returns(resultado);
 
         private void ResponderFormulario(bool disponible = true)
-            => _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>())
+            => _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>())
                 .Returns(new CrearReservaViewModel { IdEquipo = 3, NombreEquipo = "Laptop", EquipoDisponible = disponible });
 
         [Fact]
@@ -69,7 +69,7 @@ namespace LabTrack.Tests.Controllers
         [Trait("CA", "CA-16")]
         public async Task Crear_EstudiantePenalizado_MuestraElAvisoAunqueElEquipoEstePrestado()
         {
-            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>())
+            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>())
                 .Returns(new CrearReservaViewModel { IdEquipo = 3, EstudiantePenalizado = true, EquipoDisponible = false });
 
             var vista = Assert.IsType<ViewResult>(await _controlador.Crear(3));
@@ -92,7 +92,7 @@ namespace LabTrack.Tests.Controllers
         [Trait("CA", "CA-08")]
         public async Task Crear_EquipoInexistente_DevuelveNotFound()
         {
-            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>()).Returns((CrearReservaViewModel?)null);
+            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>()).Returns((CrearReservaViewModel?)null);
 
             Assert.IsType<NotFoundResult>(await _controlador.Crear(3));
         }
@@ -135,6 +135,49 @@ namespace LabTrack.Tests.Controllers
 
             Assert.Equal("Laptop", Assert.IsType<CrearReservaViewModel>(vista.Model).NombreEquipo);
             Assert.Equal(Mensajes.ChoqueConAprobada, Assert.Single(_controlador.ModelState[string.Empty]!.Errors).ErrorMessage);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public async Task CrearPost_ErrorConDetalle_MuestraMensajeYDetalle()
+        {
+            ResponderCrear(ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ChoqueConAprobada, "Ocupado de 14:00 a 16:00."));
+            ResponderFormulario();
+
+            Assert.IsType<ViewResult>(await _controlador.Crear(Formulario()));
+
+            var errores = _controlador.ModelState[string.Empty]!.Errors.Select(e => e.ErrorMessage);
+            Assert.Equal(new[] { Mensajes.ChoqueConAprobada, "Ocupado de 14:00 a 16:00." }, errores);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-09")]
+        public async Task CrearPost_ChoqueConFranjaLibre_OfreceLaSugerencia()
+        {
+            ResponderCrear(ResultadoOperacion.FalloConSugerencia(
+                TipoResultado.Conflicto, Mensajes.ChoqueConAprobada, "Detalle.", new TimeOnly(16, 0), new TimeOnly(18, 0)));
+            ResponderFormulario();
+
+            var vista = Assert.IsType<ViewResult>(await _controlador.Crear(Formulario()));
+
+            var modelo = Assert.IsType<CrearReservaViewModel>(vista.Model);
+            Assert.Equal((new TimeOnly(16, 0), new TimeOnly(18, 0)), (modelo.SugerenciaInicio!.Value, modelo.SugerenciaFin!.Value));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-08")]
+        public async Task Crear_ConFecha_PideLaOcupacionDeEseDia()
+        {
+            var fecha = new DateOnly(2026, 11, 12);
+            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, fecha, Arg.Any<CancellationToken>())
+                .Returns(new CrearReservaViewModel { EquipoDisponible = true, FechaOcupacion = fecha });
+
+            var vista = Assert.IsType<ViewResult>(await _controlador.Crear(3, fecha));
+
+            Assert.Equal(fecha, Assert.IsType<CrearReservaViewModel>(vista.Model).Fecha);
         }
 
         [Fact]

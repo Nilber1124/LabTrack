@@ -8,6 +8,7 @@ namespace LabTrack.ViewModels
         public string Nombre { get; set; } = string.Empty;
         public string CodigoInventario { get; set; } = string.Empty;
         public string Categoria { get; set; } = string.Empty;
+        public string? FotoUrl { get; set; }
         public EstadoEquipo Estado { get; set; }
         public DateTime? PrestadoHasta { get; set; }
     }

@@ -51,7 +51,7 @@ namespace LabTrack.Tests.Data
             await using var contexto = BaseDatos.CrearContexto();
             var estados = await contexto.Reservas.Select(r => r.Estado).Distinct().ToListAsync();
             Assert.Equal(Enum.GetValues<EstadoReserva>().Order(), estados.Order());
-            Assert.Equal(24 * DbSeeder.UnidadesPorModelo, await contexto.Equipos.CountAsync());
+            Assert.Equal(24 * DbSeeder.UnidadesPorModelo + 2, await contexto.Equipos.CountAsync());
         }
 
         [Fact]

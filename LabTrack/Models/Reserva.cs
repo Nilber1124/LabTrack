@@ -28,6 +28,8 @@ namespace LabTrack.Models
 
         public DateTime? FechaDevolucionReal { get; set; }
 
+        public DateTime? FechaSolicitud { get; set; }
+
         [Timestamp]
         public byte[] Version { get; set; } = [];
 

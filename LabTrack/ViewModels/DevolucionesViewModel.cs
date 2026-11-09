@@ -7,5 +7,6 @@ namespace LabTrack.ViewModels
         public int TotalVencidas { get; set; }
         public DateTime Ahora { get; set; }
         public PaginacionViewModel Paginacion { get; set; } = new();
+        public FichaEstudianteViewModel? Ficha { get; set; }
     }
 }

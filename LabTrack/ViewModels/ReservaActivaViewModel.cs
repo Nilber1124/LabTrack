@@ -3,6 +3,7 @@ namespace LabTrack.ViewModels
     public class ReservaActivaViewModel
     {
         public int IdReserva { get; set; }
+        public int IdUsuario { get; set; }
         public string Estudiante { get; set; } = string.Empty;
         public string CodigoEstudiante { get; set; } = string.Empty;
         public string Equipo { get; set; } = string.Empty;

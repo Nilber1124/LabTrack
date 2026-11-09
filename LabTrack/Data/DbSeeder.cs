@@ -41,6 +41,12 @@ namespace LabTrack.Data
             ("Crimpadora RJ45 · kit", "CR-0009", "Redes")
         ];
 
+        private static readonly (string Nombre, string Codigo, string Categoria)[] EquiposDeBajaDemostracion =
+        [
+            ("Proyector Epson X05", "PY-0007", "Cómputo"),
+            ("Switch Cisco Catalyst 2950", "SW-0011", "Redes")
+        ];
+
         private static readonly (string Codigo, string Nombre, EstadoUsuario Estado)[] EstudiantesDemostracion =
         [
             ("20240312", "Camila Paredes León", EstadoUsuario.Activo),
@@ -67,6 +73,9 @@ namespace LabTrack.Data
             await SembrarUsuarioAsync(context, configuracion.GetSection("Semilla:Encargado"),
                 NombresRol.Encargado, hasher, logger, cancellationToken);
 
+            await SembrarUsuarioAsync(context, configuracion.GetSection("Semilla:Administrador"),
+                NombresRol.Administrador, hasher, logger, cancellationToken);
+
             foreach (var estudiante in configuracion.GetSection("Semilla:Estudiantes").GetChildren())
             {
                 await SembrarUsuarioAsync(context, estudiante,
@@ -79,6 +88,7 @@ namespace LabTrack.Data
 
             await SembrarReservasAsync(
                 context, configuracion["Semilla:Estudiantes:0:Codigo"], tiempo.GetLocalNow().DateTime, cancellationToken);
+            await CompletarFechasDeSolicitudAsync(context, tiempo.GetLocalNow().DateTime, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
         }
 
@@ -151,6 +161,11 @@ namespace LabTrack.Data
             var existentes = await context.Equipos.Select(e => e.CodigoInventario).ToListAsync(cancellationToken);
             var categorias = await context.Categorias
                 .ToDictionaryAsync(c => c.Nombre, c => c.IdCategoria, cancellationToken);
+            var nombresCategoria = categorias.ToDictionary(c => c.Value, c => c.Key);
+
+            // Completa los equipos creados antes de que existiera el laboratorio.
+            var sinLaboratorio = await context.Equipos.Where(e => e.Laboratorio == string.Empty).ToListAsync(cancellationToken);
+            sinLaboratorio.ForEach(e => e.Laboratorio = LaboratorioDe(nombresCategoria[e.IdCategoria]));
 
             var unidades = EquiposDemostracion.SelectMany(e => Enumerable.Range(1, UnidadesPorModelo).Select(unidad =>
                 unidad == 1 ? e : (Nombre: $"{e.Nombre} · U{unidad}", Codigo: $"{e.Codigo}-{unidad}", e.Categoria)));
@@ -161,7 +176,19 @@ namespace LabTrack.Data
                 {
                     Nombre = e.Nombre,
                     CodigoInventario = e.Codigo,
-                    IdCategoria = categorias[e.Categoria]
+                    IdCategoria = categorias[e.Categoria],
+                    Laboratorio = LaboratorioDe(e.Categoria)
+                }));
+
+            context.Equipos.AddRange(EquiposDeBajaDemostracion
+                .Where(e => !existentes.Contains(e.Codigo))
+                .Select(e => new Equipo
+                {
+                    Nombre = e.Nombre,
+                    CodigoInventario = e.Codigo,
+                    IdCategoria = categorias[e.Categoria],
+                    Laboratorio = LaboratorioDe(e.Categoria),
+                    DeBaja = true
                 }));
         }
 
@@ -171,8 +198,11 @@ namespace LabTrack.Data
             var usuarios = await context.Usuarios.ToDictionaryAsync(u => u.Codigo, u => u.IdUsuario, cancellationToken);
             var equipos = await context.Equipos.ToDictionaryAsync(e => e.CodigoInventario, e => e.IdEquipo, cancellationToken);
 
+            var minutosDesdeSolicitud = 0;
+
             foreach (var plan in PlanDeReservas(codigoEstudiantePrincipal, ahora))
             {
+                minutosDesdeSolicitud += 23;
                 if (plan.Estudiante is null
                     || !usuarios.TryGetValue(plan.Estudiante, out var idUsuario)
                     || !equipos.TryGetValue(plan.Equipo, out var idEquipo))
@@ -201,8 +231,19 @@ namespace LabTrack.Data
                     Fin = plan.Fin,
                     Estado = plan.Estado,
                     MotivoRechazo = plan.Motivo,
-                    FechaDevolucionReal = plan.Devolucion
+                    FechaDevolucionReal = plan.Devolucion,
+                    FechaSolicitud = ahora.AddMinutes(-minutosDesdeSolicitud)
                 });
+            }
+        }
+
+        // Completa las reservas creadas antes de que existiera la fecha de solicitud.
+        private static async Task CompletarFechasDeSolicitudAsync(AppDbContext context, DateTime ahora, CancellationToken cancellationToken)
+        {
+            var sinFecha = await context.Reservas.Where(r => r.FechaSolicitud == null).OrderBy(r => r.IdReserva).ToListAsync(cancellationToken);
+            for (var i = 0; i < sinFecha.Count; i++)
+            {
+                sinFecha[i].FechaSolicitud = ahora.AddMinutes(-(i + 1) * 17);
             }
         }
 
@@ -240,6 +281,13 @@ namespace LabTrack.Data
             yield return (codigoEstudiantePrincipal, "RT-0045", hora.AddDays(-7), hora.AddDays(-7).AddHours(2), EstadoReserva.Devuelta, null, hora.AddDays(-7).AddHours(1));
             yield return (codigoEstudiantePrincipal, "RP-0520", hora.AddDays(-12), hora.AddDays(-12).AddHours(2), EstadoReserva.Rechazada, "Solicitud fuera del horario de atención.", null);
         }
+
+        private static string LaboratorioDe(string categoria) => categoria switch
+        {
+            "Electrónica" => "Lab. B-110",
+            "Redes" => "Lab. C-301",
+            _ => "Lab. A-204"
+        };
 
         private static Task<int> ObtenerIdRolAsync(AppDbContext context, string nombreRol, CancellationToken cancellationToken)
             => context.Roles

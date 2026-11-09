@@ -6,6 +6,7 @@
 .tarjeta-nombre { font-size: 17px; line-height: 1.2; letter-spacing: -.01em; margin: 0; }
 .tarjeta-accion { margin-top: auto; width: 100%; justify-content: space-between; }
 .tarjeta .codigo { margin-bottom: 8px; }
+#cargar-mas { display: none; }
 
 @media (max-width: 1100px) {
     .tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -14,4 +15,6 @@
 @media (max-width: 600px) {
     .tarjetas { grid-template-columns: minmax(0, 1fr); }
     .foto-equipo { height: 96px; }
+    .con-cargar-mas .paginacion nav { display: none; }
+    .con-cargar-mas #cargar-mas:not([hidden]) { display: flex; width: 100%; }
 }

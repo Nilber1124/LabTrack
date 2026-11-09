@@ -40,7 +40,7 @@
         }
         else
         {
-            <b>No tienes reservas en este estado</b>
+            <b>No tienes reservas @(Model.EstadoSeleccionado.ToString()!.ToLowerInvariant())s</b>
         }
     </div>
 }

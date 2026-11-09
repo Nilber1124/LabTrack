@@ -24,11 +24,11 @@ namespace LabTrack.Tests.Controllers
         [Trait("CA", "CA-05")]
         public async Task Index_ConFiltro_ConsultaLaCategoriaYPagina()
         {
-            _servicio.ListarAsync("Redes", 2, Arg.Any<CancellationToken>()).Returns(new CatalogoViewModel());
+            _servicio.ListarAsync("Redes", 2, null, Arg.Any<CancellationToken>()).Returns(new CatalogoViewModel());
 
             await _controlador.Index("Redes", 2);
 
-            await _servicio.Received(1).ListarAsync("Redes", 2, Arg.Any<CancellationToken>());
+            await _servicio.Received(1).ListarAsync("Redes", 2, null, Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace LabTrack.Tests.Controllers
         [Trait("CA", "CA-06")]
         public async Task Index_SinEquipos_EntregaElMensajeExacto()
         {
-            _servicio.ListarAsync("Redes", 1, Arg.Any<CancellationToken>()).Returns(new CatalogoViewModel());
+            _servicio.ListarAsync("Redes", 1, null, Arg.Any<CancellationToken>()).Returns(new CatalogoViewModel());
 
             var vista = Assert.IsType<ViewResult>(await _controlador.Index("Redes"));
 
@@ -50,7 +50,7 @@ namespace LabTrack.Tests.Controllers
         public async Task Index_ConEquipos_NoEntregaMensajeVacio()
         {
             var catalogo = new CatalogoViewModel { Equipos = [new EquipoCatalogoViewModel { Nombre = "Laptop" }] };
-            _servicio.ListarAsync(null, 1, Arg.Any<CancellationToken>()).Returns(catalogo);
+            _servicio.ListarAsync(null, 1, null, Arg.Any<CancellationToken>()).Returns(catalogo);
 
             var vista = Assert.IsType<ViewResult>(await _controlador.Index(null));
 

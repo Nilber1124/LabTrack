@@ -11,17 +11,26 @@
         <h1>Catálogo de equipos</h1>
         <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta · @Model.TotalDisponibles @(Model.TotalDisponibles == 1 ? "disponible" : "disponibles") ahora</span>
     </div>
+    <form asp-action="Index" method="get" class="busqueda">
+        <input type="hidden" name="categoria" value="@Model.CategoriaSeleccionada" />
+        <div class="campo">
+            <label for="busqueda">Buscar</label>
+            <input id="busqueda" name="busqueda" value="@Model.Busqueda" class="entrada" type="search" maxlength="120" placeholder="Nombre o código de inventario" />
+        </div>
+        <button type="submit" class="btn btn-primario">Buscar</button>
+    </form>
 </div>
 
 <div class="filtros">
     <span class="filtros-titulo">Categoría</span>
     <div class="segmentos">
-        <a asp-action="Index" aria-current="@Actual(null)">Todas · @Model.TotalGeneral</a>
+        <a asp-action="Index" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(null)">Todas · @Model.TotalGeneral</a>
         @foreach (var categoria in Model.Categorias)
         {
-            <a asp-action="Index" asp-route-categoria="@categoria.Nombre" aria-current="@Actual(categoria.Nombre)">@categoria.Nombre · @categoria.Total</a>
+            <a asp-action="Index" asp-route-categoria="@categoria.Nombre" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(categoria.Nombre)">@categoria.Nombre · @categoria.Total</a>
         }
     </div>
+    <span class="ayuda filtros-orden">Disponibles primero</span>
 </div>
 
 @if (Model.SinResultados)
@@ -39,7 +48,7 @@ else
         {
             var disponible = equipo.Estado == EstadoEquipo.Disponible;
             <article class="tarjeta">
-                <partial name="_FotoEquipo" />
+                <partial name="_FotoEquipo" model="new FotoEquipoViewModel(equipo.FotoUrl, equipo.Nombre)" />
                 <div class="tarjeta-cuerpo">
                 <div class="tarjeta-cabecera">
                     <span class="filtros-titulo">@equipo.Categoria</span>
@@ -60,4 +69,13 @@ else
         }
     </div>
     <partial name="_Paginacion" model="Model.Paginacion" />
+    @if (Model.Paginacion.TotalPaginas > 1)
+    {
+        <button type="button" class="btn btn-secundario" id="cargar-mas" data-pagina="@Model.Paginacion.Pagina"
+                data-total-paginas="@Model.Paginacion.TotalPaginas" data-total="@Model.Paginacion.Total">Cargar más</button>
+    }
+}
+
+@section Scripts {
+    <script src="~/js/catalogo.js" asp-append-version="true"></script>
 }

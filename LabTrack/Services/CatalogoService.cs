@@ -20,15 +20,21 @@ namespace LabTrack.Services
         }
 
         public async Task<CatalogoViewModel> ListarAsync(
-            string? categoria, int pagina, CancellationToken cancellationToken = default)
+            string? categoria, int pagina, string? busqueda = null, CancellationToken cancellationToken = default)
         {
             categoria = string.IsNullOrWhiteSpace(categoria) ? null : categoria.Trim();
+            busqueda = string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim();
             var enCurso = EstadoPrestamo.EnCurso(_tiempo.GetLocalNow().DateTime);
 
-            var equipos = _context.Equipos.AsNoTracking();
+            var equipos = _context.Equipos.AsNoTracking().Where(e => !e.DeBaja);
             if (categoria is not null)
             {
                 equipos = equipos.Where(e => e.Categoria.Nombre == categoria);
+            }
+
+            if (busqueda is not null)
+            {
+                equipos = equipos.Where(e => e.Nombre.Contains(busqueda) || e.CodigoInventario.Contains(busqueda));
             }
 
             var consulta = equipos.Select(e => new
@@ -37,6 +43,7 @@ namespace LabTrack.Services
                 e.Nombre,
                 e.CodigoInventario,
                 Categoria = e.Categoria.Nombre,
+                e.FotoUrl,
                 PrestadoHasta = e.Reservas.AsQueryable().Where(enCurso).Max(r => (DateTime?)r.Fin)
             });
 
@@ -54,7 +61,7 @@ namespace LabTrack.Services
 
             var categorias = await _context.Categorias.AsNoTracking()
                 .OrderBy(c => c.IdCategoria)
-                .Select(c => new CategoriaFiltroViewModel { Nombre = c.Nombre, Total = c.Equipos.Count })
+                .Select(c => new CategoriaFiltroViewModel { Nombre = c.Nombre, Total = c.Equipos.Count(e => !e.DeBaja) })
                 .ToListAsync(cancellationToken);
 
             return new CatalogoViewModel
@@ -65,11 +72,13 @@ namespace LabTrack.Services
                     Nombre = e.Nombre,
                     CodigoInventario = e.CodigoInventario,
                     Categoria = e.Categoria,
+                    FotoUrl = e.FotoUrl,
                     Estado = EstadoPrestamo.Calcular(e.PrestadoHasta is not null),
                     PrestadoHasta = e.PrestadoHasta
                 }).ToList(),
                 Categorias = categorias,
                 CategoriaSeleccionada = categoria,
+                Busqueda = busqueda,
                 TotalDisponibles = disponibles,
                 Paginacion = new PaginacionViewModel
                 {
@@ -78,7 +87,7 @@ namespace LabTrack.Services
                     TamanoPagina = TamanoPagina,
                     Etiqueta = "equipos",
                     EtiquetaSingular = "equipo",
-                    Parametros = new() { ["categoria"] = categoria }
+                    Parametros = new() { ["categoria"] = categoria, ["busqueda"] = busqueda }
                 }
             };
         }

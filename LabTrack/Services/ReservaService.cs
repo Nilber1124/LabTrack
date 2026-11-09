@@ -27,19 +27,21 @@ namespace LabTrack.Services
 
         private DateTime Ahora => _tiempo.GetLocalNow().DateTime;
 
-        public async Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idUsuario, int idEquipo, CancellationToken cancellationToken = default)
+        public async Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idUsuario, int idEquipo, DateOnly? fecha = null, CancellationToken cancellationToken = default)
         {
             var ahora = Ahora;
             var enCurso = EstadoPrestamo.EnCurso(ahora);
 
             var modelo = await _context.Equipos.AsNoTracking()
-                .Where(e => e.IdEquipo == idEquipo)
+                .Where(e => e.IdEquipo == idEquipo && !e.DeBaja)
                 .Select(e => new CrearReservaViewModel
                 {
                     IdEquipo = e.IdEquipo,
                     NombreEquipo = e.Nombre,
                     CodigoInventario = e.CodigoInventario,
                     Categoria = e.Categoria.Nombre,
+                    Laboratorio = e.Laboratorio,
+                    FotoUrl = e.FotoUrl,
                     EquipoDisponible = !e.Reservas.AsQueryable().Any(enCurso)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -48,6 +50,12 @@ namespace LabTrack.Services
             {
                 modelo.FechaMinima = DateOnly.FromDateTime(ahora);
                 await CompletarPenalizacionAsync(modelo, idUsuario, cancellationToken);
+
+                modelo.FechaOcupacion = fecha ?? modelo.FechaMinima;
+                var bloques = await AprobadasDelDiaAsync(idEquipo, modelo.FechaOcupacion, cancellationToken);
+                modelo.Ocupacion = bloques
+                    .Select(b => new BloqueOcupadoViewModel { Inicio = b.Inicio, Fin = b.Fin })
+                    .ToList();
             }
 
             return modelo;
@@ -70,7 +78,7 @@ namespace LabTrack.Services
             await using var transaccion = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             var equipo = await BloquearEquipoAsync(idEquipo, cancellationToken);
-            if (equipo is null)
+            if (equipo is null || equipo.DeBaja)
             {
                 return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.EquipoNoEncontrado);
             }
@@ -97,17 +105,23 @@ namespace LabTrack.Services
                 return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.EquipoNoDisponible);
             }
 
-            if (await ExisteCruceConAprobadaAsync(idEquipo, inicio, fin, null, cancellationToken))
+            var cruce = await BuscarCruceConAprobadaAsync(idEquipo, inicio, fin, null, cancellationToken);
+            if (cruce is not null)
             {
-                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ChoqueConAprobada);
+                return await ChoqueConSugerenciaAsync(idEquipo, fecha, cruce, fin - inicio, cancellationToken);
             }
 
-            var tieneReservaActiva = await _context.Reservas.AsNoTracking()
-                .AnyAsync(r => r.IdUsuario == idUsuario
-                    && (r.Estado == EstadoReserva.Pendiente || r.Estado == EstadoReserva.Aprobada), cancellationToken);
-            if (tieneReservaActiva)
+            var activa = await _context.Reservas.AsNoTracking()
+                .Where(r => r.IdUsuario == idUsuario
+                    && (r.Estado == EstadoReserva.Pendiente || r.Estado == EstadoReserva.Aprobada))
+                .Select(r => new { Equipo = r.Equipo.Nombre, r.Inicio, r.Fin })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (activa is not null)
             {
-                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.UnaReservaALaVez);
+                return ResultadoOperacion.Fallo(
+                    TipoResultado.Conflicto,
+                    Mensajes.UnaReservaALaVez,
+                    $"Ya tienes «{activa.Equipo}» el {Formato.FechaYHorario(activa.Inicio, activa.Fin)}.");
             }
 
             _context.Reservas.Add(new Reserva
@@ -116,7 +130,8 @@ namespace LabTrack.Services
                 IdEquipo = idEquipo,
                 Inicio = inicio,
                 Fin = fin,
-                Estado = EstadoReserva.Pendiente
+                Estado = EstadoReserva.Pendiente,
+                FechaSolicitud = ahora
             });
 
             try
@@ -202,9 +217,18 @@ namespace LabTrack.Services
                 .Take(TamanoPaginaSolicitudes)
                 .ToListAsync(cancellationToken);
 
+            var ahora = Ahora;
+            foreach (var solicitud in solicitudes.Where(s => s.FechaSolicitud is not null))
+            {
+                solicitud.Recibida = Formato.Antiguedad(ahora - solicitud.FechaSolicitud!.Value);
+            }
+
+            var masAntigua = await pendientes.MinAsync(s => s.FechaSolicitud, cancellationToken);
+
             return new SolicitudesViewModel
             {
                 Solicitudes = solicitudes,
+                AntiguedadMayor = masAntigua is null ? null : Formato.Antiguedad(ahora - masAntigua.Value),
                 Paginacion = new PaginacionViewModel
                 {
                     Pagina = pagina,
@@ -245,7 +269,12 @@ namespace LabTrack.Services
                 return ResultadoOperacion.Fallo(TipoResultado.EstadoInvalido, Mensajes.SolicitudYaResuelta);
             }
 
-            if (await ExisteCruceConAprobadaAsync(reserva.IdEquipo, reserva.Inicio, reserva.Fin, reserva.IdReserva, cancellationToken))
+            if (equipo.DeBaja)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.EquipoNoDisponible);
+            }
+
+            if (await BuscarCruceConAprobadaAsync(reserva.IdEquipo, reserva.Inicio, reserva.Fin, reserva.IdReserva, cancellationToken) is not null)
             {
                 return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ChoqueConAprobada);
             }
@@ -317,7 +346,8 @@ namespace LabTrack.Services
                     Equipo = r.Equipo.Nombre,
                     CodigoInventario = r.Equipo.CodigoInventario,
                     Inicio = r.Inicio,
-                    Fin = r.Fin
+                    Fin = r.Fin,
+                    FechaSolicitud = r.FechaSolicitud
                 });
 
         private async Task CompletarPenalizacionAsync(
@@ -350,12 +380,49 @@ namespace LabTrack.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(cancellationToken);
 
-        private Task<bool> ExisteCruceConAprobadaAsync(
+        private Task<Reserva?> BuscarCruceConAprobadaAsync(
             int idEquipo, DateTime inicio, DateTime fin, int? idReservaExcluida, CancellationToken cancellationToken)
             => _context.Reservas.AsNoTracking()
                 .Where(r => r.IdEquipo == idEquipo && r.Estado == EstadoReserva.Aprobada)
                 .Where(r => idReservaExcluida == null || r.IdReserva != idReservaExcluida)
-                .AnyAsync(CruceHorarios.ConHorario(inicio, fin), cancellationToken);
+                .Where(CruceHorarios.ConHorario(inicio, fin))
+                .OrderBy(r => r.Inicio)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        private async Task<ResultadoOperacion> ChoqueConSugerenciaAsync(
+            int idEquipo, DateOnly fecha, Reserva cruce, TimeSpan duracion, CancellationToken cancellationToken)
+        {
+            var bloques = await AprobadasDelDiaAsync(idEquipo, fecha, cancellationToken);
+            var libre = CruceHorarios.PrimeraFranjaLibre(bloques, cruce.Fin, duracion);
+            var inicio = TimeOnly.FromDateTime(libre);
+            var fin = TimeOnly.FromDateTime(libre + duracion);
+
+            // Solo se ofrece si cabe el mismo día y dentro de las horas que muestra el formulario.
+            var ofrecible = DateOnly.FromDateTime(libre + duracion) == fecha
+                && CrearReservaViewModel.Horas.Contains(inicio)
+                && CrearReservaViewModel.Horas.Contains(fin);
+
+            var ocupado = $"Ocupado de {Formato.Hora(cruce.Inicio)} a {Formato.Hora(cruce.Fin)}.";
+            return ofrecible
+                ? ResultadoOperacion.FalloConSugerencia(
+                    TipoResultado.Conflicto, Mensajes.ChoqueConAprobada, $"{ocupado} Primera franja libre: {Formato.Hora(libre)}.", inicio, fin)
+                : ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ChoqueConAprobada, ocupado);
+        }
+
+        private async Task<List<(DateTime Inicio, DateTime Fin)>> AprobadasDelDiaAsync(
+            int idEquipo, DateOnly fecha, CancellationToken cancellationToken)
+        {
+            var desde = fecha.ToDateTime(TimeOnly.MinValue);
+            var hasta = desde.AddDays(1);
+
+            var filas = await _context.Reservas.AsNoTracking()
+                .Where(r => r.IdEquipo == idEquipo && r.Estado == EstadoReserva.Aprobada && r.Inicio >= desde && r.Inicio < hasta)
+                .OrderBy(r => r.Inicio)
+                .Select(r => new { r.Inicio, r.Fin })
+                .ToListAsync(cancellationToken);
+
+            return filas.Select(f => (f.Inicio, f.Fin)).ToList();
+        }
 
         private static bool EsViolacionDeUnicidad(DbUpdateException ex)
             => ex.InnerException is SqlException { Number: ErrorClaveDuplicada or ErrorRestriccionUnica };

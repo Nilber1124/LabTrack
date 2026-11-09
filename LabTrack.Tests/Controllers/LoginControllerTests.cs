@@ -85,6 +85,30 @@ namespace LabTrack.Tests.Controllers
         }
 
         [Fact]
+        [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-CA1")]
+        public async Task Index_AdministradorValido_VaASolicitudes()
+        {
+            Responder(Exitosa(NombresRol.Administrador));
+
+            var resultado = Assert.IsType<RedirectToActionResult>(await _controlador.Index(Formulario(), default));
+
+            Assert.Equal("Solicitudes", resultado.ControllerName);
+        }
+
+        [Fact]
+        [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-CA1")]
+        public void Index_AdministradorYaAutenticado_RedirigeASolicitudes()
+        {
+            ContextoControlador.Configurar(_controlador, 1, NombresRol.Administrador);
+
+            var resultado = Assert.IsType<RedirectToActionResult>(_controlador.Index());
+
+            Assert.Equal("Solicitudes", resultado.ControllerName);
+        }
+
+        [Fact]
         [Trait("HU", "HU-01")]
         [Trait("CA", "CA-01")]
         public async Task Index_CredencialesValidas_EmiteClaimsDeIdentidadYRol()

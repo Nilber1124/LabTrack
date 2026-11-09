@@ -58,25 +58,33 @@ namespace LabTrack.Tests.Seguridad
         [Fact]
         [Trait("HU", "HU-04")]
         [Trait("CA", "CA-11")]
-        public void Solicitudes_RolEsperado_EsEncargado()
+        public void Solicitudes_RolesEsperados_SonEncargadoYAdministrador()
         {
-            Assert.Equal("ENCARGADO", Roles<SolicitudesController>());
+            Assert.Equal("ENCARGADO,ADMINISTRADOR", Roles<SolicitudesController>());
         }
 
         [Fact]
         [Trait("HU", "HU-05")]
         [Trait("CA", "CA-14")]
-        public void Devoluciones_RolEsperado_EsEncargado()
+        public void Devoluciones_RolesEsperados_SonEncargadoYAdministrador()
         {
-            Assert.Equal("ENCARGADO", Roles<DevolucionesController>());
+            Assert.Equal("ENCARGADO,ADMINISTRADOR", Roles<DevolucionesController>());
         }
 
         [Fact]
         [Trait("HU", "HU-05")]
         [Trait("CA", "CA-16")]
-        public void Penalizados_RolEsperado_EsEncargado()
+        public void Penalizados_RolesEsperados_SonEncargadoYAdministrador()
         {
-            Assert.Equal("ENCARGADO", Roles<PenalizadosController>());
+            Assert.Equal("ENCARGADO,ADMINISTRADOR", Roles<PenalizadosController>());
+        }
+
+        [Fact]
+        [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-CA2")]
+        public void Equipos_RolEsperado_EsSoloAdministrador()
+        {
+            Assert.Equal("ADMINISTRADOR", Roles<EquiposController>());
         }
 
         [Fact]

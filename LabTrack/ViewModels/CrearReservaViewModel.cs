@@ -34,10 +34,28 @@ namespace LabTrack.ViewModels
         public string Categoria { get; set; } = string.Empty;
 
         [BindNever]
+        public string Laboratorio { get; set; } = string.Empty;
+
+        [BindNever]
+        public string? FotoUrl { get; set; }
+
+        [BindNever]
         public bool EquipoDisponible { get; set; }
 
         [BindNever]
         public DateOnly FechaMinima { get; set; }
+
+        [BindNever]
+        public DateOnly FechaOcupacion { get; set; }
+
+        [BindNever]
+        public IReadOnlyList<BloqueOcupadoViewModel> Ocupacion { get; set; } = [];
+
+        [BindNever]
+        public TimeOnly? SugerenciaInicio { get; set; }
+
+        [BindNever]
+        public TimeOnly? SugerenciaFin { get; set; }
 
         [BindNever]
         public bool EstudiantePenalizado { get; set; }

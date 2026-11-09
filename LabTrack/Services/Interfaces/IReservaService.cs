@@ -5,7 +5,7 @@ namespace LabTrack.Services.Interfaces
 {
     public interface IReservaService
     {
-        Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idUsuario, int idEquipo, CancellationToken cancellationToken = default);
+        Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idUsuario, int idEquipo, DateOnly? fecha = null, CancellationToken cancellationToken = default);
         Task<ResultadoOperacion> CrearAsync(int idUsuario, int idEquipo, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, CancellationToken cancellationToken = default);
         Task<MisReservasViewModel> ListarPropiasAsync(int idUsuario, EstadoReserva? estado, int pagina, CancellationToken cancellationToken = default);
         Task<SolicitudesViewModel> ListarPendientesAsync(int pagina, CancellationToken cancellationToken = default);

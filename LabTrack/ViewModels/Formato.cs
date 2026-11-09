@@ -22,6 +22,23 @@ namespace LabTrack.ViewModels
         public static string FechaHora(DateTime fecha)
             => fecha.ToString("dd/MM/yyyy · HH:mm", CultureInfo.InvariantCulture);
 
+        public static string Antiguedad(TimeSpan transcurrido)
+        {
+            var minutos = (int)Math.Floor(transcurrido.TotalMinutes);
+            if (minutos < 1)
+            {
+                return "hace un momento";
+            }
+
+            if (minutos < 60)
+            {
+                return $"hace {minutos} min";
+            }
+
+            var horas = minutos / 60;
+            return horas < 24 ? $"hace {horas} h" : $"hace {horas / 24} d";
+        }
+
         public static string Duracion(TimeSpan duracion)
         {
             var minutos = (int)Math.Ceiling(Math.Abs(duracion.TotalMinutes));

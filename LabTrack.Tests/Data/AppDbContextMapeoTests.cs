@@ -97,11 +97,11 @@ namespace LabTrack.Tests.Data
         [Fact]
         [Trait("HU", "HU-01")]
         [Trait("CA", "CA-01")]
-        public void Rol_Semilla_ContieneEstudianteYEncargado()
+        public void Rol_Semilla_ContieneLosTresRoles()
         {
             var nombres = Entidad<Rol>().GetSeedData().Select(d => (string)d[nameof(Rol.Nombre)]!);
 
-            Assert.Equal(new[] { "ENCARGADO", "ESTUDIANTE" }, nombres.Order());
+            Assert.Equal(new[] { "ADMINISTRADOR", "ENCARGADO", "ESTUDIANTE" }, nombres.Order());
         }
 
         [Fact]

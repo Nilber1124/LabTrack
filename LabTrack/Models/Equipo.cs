@@ -22,6 +22,16 @@ namespace LabTrack.Models
         [Range(1, int.MaxValue, ErrorMessage = "Selecciona una categoría válida.")]
         public int IdCategoria { get; set; }
 
+        [Required(ErrorMessage = "El laboratorio es obligatorio.")]
+        [StringLength(30, ErrorMessage = "El laboratorio no puede exceder los 30 caracteres.")]
+        public string Laboratorio { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "La dirección de la foto no puede exceder los 500 caracteres.")]
+        public string? FotoUrl { get; set; }
+
+        // Oculta el equipo del catálogo y conserva su historial.
+        public bool DeBaja { get; set; }
+
         [Timestamp]
         public byte[] Version { get; set; } = [];
 

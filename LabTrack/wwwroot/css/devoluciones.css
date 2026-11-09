@@ -1,3 +1,0 @@
-/* Devoluciones (mockup 06). */
-.busqueda { display: flex; align-items: flex-end; gap: 8px; width: min(420px, 100%); }
-.busqueda .campo { flex: 1; }

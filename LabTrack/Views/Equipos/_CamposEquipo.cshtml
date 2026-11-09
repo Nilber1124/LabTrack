@@ -1,0 +1,51 @@
+@using LabTrack.Reglas
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model FormularioEquipoViewModel
+<input asp-for="IdEquipo" type="hidden" id="equipo-id" />
+<div asp-validation-summary="ModelOnly" class="alerta alerta-error validacion-resumen" role="alert"></div>
+<div class="campo">
+    <label asp-for="Nombre"></label>
+    <input asp-for="Nombre" class="entrada" maxlength="120" />
+    <span asp-validation-for="Nombre" class="error-campo"></span>
+</div>
+<div class="campo">
+    <label asp-for="CodigoInventario"></label>
+    <input asp-for="CodigoInventario" class="entrada" maxlength="30" />
+    <span asp-validation-for="CodigoInventario" class="error-campo"></span>
+</div>
+<div class="equipo-selectores">
+    <div class="campo">
+        <label asp-for="IdCategoria"></label>
+        <select asp-for="IdCategoria" class="entrada" asp-items="@(new SelectList(Model.Categorias, "IdCategoria", "Nombre"))">
+            <option value="">Selecciona…</option>
+        </select>
+        <span asp-validation-for="IdCategoria" class="error-campo"></span>
+    </div>
+    <div class="campo">
+        <label asp-for="Laboratorio"></label>
+        <select asp-for="Laboratorio" class="entrada" asp-items="@(new SelectList(Laboratorios.Opciones))">
+            <option value="">Selecciona…</option>
+        </select>
+        <span asp-validation-for="Laboratorio" class="error-campo"></span>
+    </div>
+</div>
+<div class="campo">
+    <label for="Foto">Foto del equipo (opcional)</label>
+    <div class="equipo-foto">
+        <div class="equipo-foto-vista" id="equipo-vista" data-foto-actual="@Model.FotoActual">
+            @if (Model.FotoActual is not null)
+            {
+                <img src="@Model.FotoActual" alt="" />
+            }
+            else
+            {
+                <span>vista previa</span>
+            }
+        </div>
+        <div class="campo">
+            <input id="Foto" name="Foto" type="file" accept="image/png,image/jpeg" class="entrada" />
+            <span class="ayuda">JPG o PNG · máximo 2 MB · se muestra en el catálogo</span>
+            <span class="error-campo" id="equipo-foto-error" role="alert" hidden>El archivo supera los 2 MB o no es JPG/PNG. Elige otra imagen o guarda el equipo sin foto.</span>
+        </div>
+    </div>
+</div>

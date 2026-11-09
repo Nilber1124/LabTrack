@@ -4,5 +4,6 @@ namespace LabTrack.ViewModels
     {
         public IReadOnlyList<SolicitudPendienteViewModel> Solicitudes { get; set; } = [];
         public PaginacionViewModel Paginacion { get; set; } = new();
+        public string? AntiguedadMayor { get; set; }
     }
 }

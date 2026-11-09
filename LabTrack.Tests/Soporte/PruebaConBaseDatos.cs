@@ -47,7 +47,7 @@ namespace LabTrack.Tests.Soporte
         protected async Task<Equipo> CrearEquipoAsync(string codigo, int idCategoria = IdComputo, string? nombre = null)
         {
             await using var contexto = BaseDatos.CrearContexto();
-            var equipo = new Equipo { CodigoInventario = codigo, Nombre = nombre ?? $"Equipo {codigo}", IdCategoria = idCategoria };
+            var equipo = new Equipo { CodigoInventario = codigo, Nombre = nombre ?? $"Equipo {codigo}", IdCategoria = idCategoria, Laboratorio = "Lab. A-204" };
             contexto.Equipos.Add(equipo);
             await contexto.SaveChangesAsync();
             return equipo;

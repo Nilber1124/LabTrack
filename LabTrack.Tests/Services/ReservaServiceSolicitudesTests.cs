@@ -68,6 +68,28 @@ namespace LabTrack.Tests.Services
 
         [Fact]
         [Trait("HU", "HU-04")]
+        [Trait("CA", "CA-11")]
+        public async Task ListarPendientesAsync_ConFechaDeSolicitud_IndicaLaAntiguedad()
+        {
+            var estudiante = await CrearUsuarioAsync("E1");
+            var equipo = await CrearEquipoAsync("LT-1");
+            await using (var contexto = BaseDatos.CrearContexto())
+            {
+                await new ReservaService(contexto, Reloj).CrearAsync(
+                    estudiante.IdUsuario, equipo.IdEquipo, Manana, new TimeOnly(10, 0), new TimeOnly(12, 0));
+            }
+
+            Reloj.Advance(TimeSpan.FromMinutes(12));
+
+            await using var lectura = BaseDatos.CrearContexto();
+            var modelo = await new ReservaService(lectura, Reloj).ListarPendientesAsync(1);
+
+            Assert.Equal("hace 12 min", Assert.Single(modelo.Solicitudes).Recibida);
+            Assert.Equal("hace 12 min", modelo.AntiguedadMayor);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-04")]
         [Trait("CA", "CA-12")]
         public async Task AprobarAsync_Pendiente_PasaAAprobada()
         {

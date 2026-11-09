@@ -35,6 +35,45 @@ namespace LabTrack.Tests.Controllers
 
         [Fact]
         [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-14")]
+        public async Task Index_SinEstudianteElegido_MuestraLaFichaDelPrimero()
+        {
+            var ficha = new FichaEstudianteViewModel { IdUsuario = 7 };
+            _servicio.ListarActivasAsync(null, 1, Arg.Any<CancellationToken>())
+                .Returns(new DevolucionesViewModel { Reservas = [new ReservaActivaViewModel { IdUsuario = 7 }] });
+            _servicio.ObtenerFichaAsync(7, Arg.Any<CancellationToken>()).Returns(ficha);
+
+            var vista = Assert.IsType<ViewResult>(await _controlador.Index(null));
+
+            Assert.Same(ficha, Assert.IsType<DevolucionesViewModel>(vista.Model).Ficha);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-14")]
+        public async Task Index_ConEstudianteElegido_MuestraSuFicha()
+        {
+            _servicio.ListarActivasAsync(null, 1, Arg.Any<CancellationToken>()).Returns(new DevolucionesViewModel());
+
+            await _controlador.Index(null, idUsuario: 9);
+
+            await _servicio.Received(1).ObtenerFichaAsync(9, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-14")]
+        public async Task Index_SinReservasNiEstudiante_NoPideFicha()
+        {
+            _servicio.ListarActivasAsync(null, 1, Arg.Any<CancellationToken>()).Returns(new DevolucionesViewModel());
+
+            await _controlador.Index(null);
+
+            await _servicio.DidNotReceiveWithAnyArgs().ObtenerFichaAsync(default, default);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
         [Trait("CA", "CA-15")]
         public async Task Marcar_ATiempo_RedirigeConExitoSinAviso()
         {

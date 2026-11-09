@@ -1,0 +1,123 @@
+@model GestionEquiposViewModel
+@{
+    ViewData["Title"] = "Equipos";
+    string? Actual(string? nombre) => Model.CategoriaSeleccionada == nombre ? "true" : null;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/equipos.css" asp-append-version="true" />
+}
+<div class="encabezado">
+    <div>
+        <h1>Gestión de equipos</h1>
+        <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta · @Model.TotalDisponibles @(Model.TotalDisponibles == 1 ? "disponible" : "disponibles") · @Model.TotalDeBaja de baja</span>
+    </div>
+    <div class="equipo-herramientas">
+        <form asp-action="Index" method="get" class="busqueda">
+            <input type="hidden" name="categoria" value="@Model.CategoriaSeleccionada" />
+            <div class="campo">
+                <label for="busqueda">Buscar</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda" class="entrada" type="search" maxlength="120" placeholder="Nombre o código de inventario" />
+            </div>
+            <button type="submit" class="btn btn-secundario">Buscar</button>
+        </form>
+        <a class="btn btn-primario js-nuevo-equipo" asp-action="Nuevo">Nuevo equipo</a>
+    </div>
+</div>
+
+<div class="filtros">
+    <span class="filtros-titulo">Categoría</span>
+    <div class="segmentos">
+        <a asp-action="Index" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(null)">Todas · @Model.TotalGeneral</a>
+        @foreach (var categoria in Model.Categorias)
+        {
+            <a asp-action="Index" asp-route-categoria="@categoria.Nombre" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(categoria.Nombre)">@categoria.Nombre · @categoria.Total</a>
+        }
+    </div>
+</div>
+
+@if (Model.Equipos.Count == 0)
+{
+    <div class="vacio" role="status">
+        @if (Model.Busqueda is null && Model.CategoriaSeleccionada is null)
+        {
+            <b>Aún no hay equipos registrados</b>
+            <span class="ayuda">Agrega el primero para que los estudiantes puedan reservarlo.</span>
+            <a class="btn btn-primario js-nuevo-equipo" asp-action="Nuevo">Nuevo equipo</a>
+        }
+        else
+        {
+            <b>No hay equipos que coincidan con la búsqueda</b>
+            <a class="btn btn-secundario" asp-action="Index">Limpiar búsqueda</a>
+        }
+    </div>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr><th scope="col">Equipo</th><th scope="col">Categoría</th><th scope="col">Laboratorio</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var equipo in Model.Equipos)
+            {
+                <tr data-id="@equipo.IdEquipo" data-nombre="@equipo.Nombre" data-codigo="@equipo.CodigoInventario"
+                    data-categoria="@equipo.IdCategoria" data-laboratorio="@equipo.Laboratorio" data-foto="@equipo.FotoUrl">
+                    <td data-etiqueta="Equipo"><b>@equipo.Nombre</b><small>Inv. @equipo.CodigoInventario</small></td>
+                    <td data-etiqueta="Categoría">@equipo.Categoria</td>
+                    <td data-etiqueta="Laboratorio">@equipo.Laboratorio</td>
+                    <td data-etiqueta="Estado"><partial name="_Badge" model="@equipo.Situacion" /></td>
+                    <td>
+                        <div class="acciones">
+                            <a class="btn btn-secundario js-editar-equipo" asp-action="Editar" asp-route-id="@equipo.IdEquipo">Editar</a>
+                            @if (equipo.DeBaja)
+                            {
+                                <form asp-action="Reactivar" method="post">
+                                    <input type="hidden" name="id" value="@equipo.IdEquipo" />
+                                    <button type="submit" class="btn btn-secundario">Reactivar</button>
+                                </form>
+                            }
+                            else if (equipo.Prestado)
+                            {
+                                <button type="button" class="btn btn-secundario" disabled>Dar de baja</button>
+                                <span class="ayuda">Registrar devolución primero</span>
+                            }
+                            else
+                            {
+                                <form asp-action="DarDeBaja" method="post" class="js-dar-baja">
+                                    <input type="hidden" name="id" value="@equipo.IdEquipo" />
+                                    <button type="submit" class="btn btn-peligro">Dar de baja</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <partial name="_Paginacion" model="Model.Paginacion" />
+}
+
+<dialog id="modal-equipo" class="modal modal-ancho" aria-labelledby="equipo-titulo">
+    <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="formulario">
+        <h2 id="equipo-titulo">Nuevo equipo</h2>
+        <partial name="_CamposEquipo" model="Model.Formulario" />
+        <div class="modal-acciones">
+            <button type="button" class="btn btn-secundario" data-cerrar>Cancelar</button>
+            <button type="submit" class="btn btn-primario">Guardar equipo</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="modal-baja" class="modal" aria-labelledby="baja-titulo">
+    <h2 id="baja-titulo"></h2>
+    <p id="baja-detalle"></p>
+    <div class="modal-acciones">
+        <button type="button" class="btn btn-secundario" data-cerrar autofocus>Cancelar</button>
+        <button type="button" class="btn btn-peligro" id="confirmar-baja">Sí, dar de baja</button>
+    </div>
+</dialog>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/equipos.js" asp-append-version="true"></script>
+}

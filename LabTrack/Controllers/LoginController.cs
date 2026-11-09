@@ -26,7 +26,7 @@ namespace LabTrack.Controllers
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return RedirigirSegunRol(User.IsInRole(NombresRol.Encargado) ? NombresRol.Encargado : NombresRol.Estudiante);
+                return RedirigirSegunRol(User.IsInRole(NombresRol.Estudiante) ? NombresRol.Estudiante : NombresRol.Encargado);
             }
 
             return View(new LoginViewModel());
@@ -98,8 +98,8 @@ namespace LabTrack.Controllers
         }
 
         private IActionResult RedirigirSegunRol(string rol)
-            => rol == NombresRol.Encargado
-                ? RedirectToAction("Index", "Solicitudes")
-                : RedirectToAction("Index", "Catalogo");
+            => rol == NombresRol.Estudiante
+                ? RedirectToAction("Index", "Catalogo")
+                : RedirectToAction("Index", "Solicitudes");
     }
 }
