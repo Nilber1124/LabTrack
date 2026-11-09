@@ -1,0 +1,23 @@
+/* Pantalla de inicio de sesión (mockup 01). */
+.login { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; }
+.login-portada { background: var(--acento); color: #fff; padding: 64px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; }
+.login-marca { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 20px; }
+.login-cuadro { width: 24px; height: 24px; background: #fff; }
+.login-portada h1 { font-size: clamp(44px, 6vw, 88px); line-height: .95; letter-spacing: -.03em; margin: 0 0 24px; color: #fff; }
+.login-portada p { font-size: 20px; margin: 0; max-width: 520px; }
+.login-pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid #fff; font-size: 14px; }
+.login-pasos span { padding-top: 12px; }
+.login-panel { padding: 64px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.login-panel form { width: min(420px, 100%); }
+.login-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.login-clave { display: flex; gap: 8px; }
+.login-contador { font-weight: 800; font-size: 32px; line-height: 1.1; }
+.login-panel .alerta-error { display: flex; flex-direction: column; gap: 4px; }
+
+@media (max-width: 800px) {
+    .login { grid-template-columns: minmax(0, 1fr); }
+    .login-portada { padding: 24px 16px; }
+    .login-portada p, .login-pasos { display: none; }
+    .login-portada h1 { font-size: 40px; margin: 0; }
+    .login-panel { padding: 24px 16px; justify-content: flex-start; }
+}

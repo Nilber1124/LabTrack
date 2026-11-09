@@ -1,0 +1,71 @@
+@model LoginViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión · LabTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="login">
+        <section class="login-portada">
+            <div class="login-marca"><span class="login-cuadro" aria-hidden="true"></span>LabTrack</div>
+            <div>
+                <h1>Reserva el equipo. Devuélvelo a tiempo.</h1>
+                <p>Préstamo de equipos de los laboratorios de Cómputo, Electrónica y Redes.</p>
+            </div>
+            <div class="login-pasos"><span>1 · Busca</span><span>2 · Reserva</span><span>3 · Recoge</span></div>
+        </section>
+        <section class="login-panel">
+            <form asp-action="Index" method="post" id="form-login" class="formulario">
+                <div>
+                    <h2>Iniciar sesión</h2>
+                    <p class="ayuda">Ingresa con tu código universitario.</p>
+                </div>
+
+                @if (Model.EstaBloqueada)
+                {
+                    <div class="alerta alerta-error" role="alert" id="alerta-bloqueo"
+                         data-segundos="@Model.SegundosRestantes">
+                        <strong>@Model.AlertaSeguridad</strong>
+                        <span>Registramos 3 intentos fallidos. Podrás intentarlo de nuevo en:</span>
+                        <span class="login-contador" id="contador-bloqueo"></span>
+                        <span>minutos restantes · se desbloquea a las @Model.BloqueadoHasta?.ToString("HH:mm")</span>
+                    </div>
+                }
+
+                <div asp-validation-summary="ModelOnly" class="alerta alerta-error validacion-resumen" role="alert"></div>
+
+                <fieldset class="formulario" disabled="@Model.EstaBloqueada">
+                    <div class="campo">
+                        <label asp-for="Codigo"></label>
+                        <input asp-for="Codigo" class="entrada" inputmode="text" autocomplete="username" maxlength="20" placeholder="Ej. 20231458" />
+                        <span asp-validation-for="Codigo" class="error-campo"></span>
+                    </div>
+                    <div class="campo">
+                        <label asp-for="Contrasena"></label>
+                        <div class="login-clave">
+                            <input asp-for="Contrasena" class="entrada" autocomplete="current-password" placeholder="Tu contraseña" />
+                            <button type="button" class="btn btn-secundario" id="mostrar-clave" aria-pressed="false">Mostrar</button>
+                        </div>
+                        <span asp-validation-for="Contrasena" class="error-campo"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primario btn-alto" id="boton-ingresar">Ingresar</button>
+                </fieldset>
+
+                <p class="ayuda">Encargados de laboratorio: usan su código institucional. El sistema detecta el rol y abre el panel correspondiente.</p>
+            </form>
+        </section>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/login.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,69 +1,98 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using LabTrack.Data;
+using LabTrack.Models;
+using LabTrack.Services;
+using LabTrack.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-
-// Configuracion de Entity Framework para SQL Server y las migraciones.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en la configuracion.");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-
-// El módulo de login debe emitir esta cookie con NameIdentifier y el rol Encargado.
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+builder.Services
+    .AddControllersWithViews(opciones =>
     {
-        options.Events.OnRedirectToLogin = context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return Task.CompletedTask;
-        };
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            return Task.CompletedTask;
-        };
-    });
-builder.Services.AddAuthorization();
+        opciones.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        opciones.Filters.Add(new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.None });
+    })
+    .AddSessionStateTempDataProvider();
+
+var cadenaConexion = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection (User Secrets o variable de entorno).");
+
+builder.Services.AddDbContext<AppDbContext>(opciones => opciones.UseSqlServer(cadenaConexion));
+
+builder.Services.Configure<SeguridadOpciones>(builder.Configuration.GetSection(SeguridadOpciones.Seccion));
+builder.Services.AddSingleton<TimeProvider>(new ZonaLimaTimeProvider());
+builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+builder.Services.AddScoped<IAutenticacionService, AutenticacionService>();
 
 builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
+builder.Services.AddSession(opciones =>
 {
-    options.Cookie.Name = ".LabTrack.Demo";
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    opciones.Cookie.Name = ".LabTrack.Sesion";
+    opciones.Cookie.HttpOnly = true;
+    opciones.Cookie.IsEssential = true;
+    opciones.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(opciones =>
+    {
+        opciones.Cookie.Name = ".LabTrack.Auth";
+        opciones.Cookie.HttpOnly = true;
+        opciones.LoginPath = "/Login";
+        opciones.AccessDeniedPath = "/Login/Denegado";
+        opciones.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        opciones.SlidingExpiration = true;
+    });
+
+// Todo lo que no declare lo contrario exige un usuario autenticado.
+builder.Services.AddAuthorization(opciones =>
+{
+    opciones.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+using (var alcance = app.Services.CreateScope())
 {
-    app.UseExceptionHandler("/Home/Error");
+    var contexto = alcance.ServiceProvider.GetRequiredService<AppDbContext>();
+    await contexto.Database.MigrateAsync();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await DbSeeder.SembrarAsync(
+            contexto,
+            app.Configuration,
+            alcance.ServiceProvider.GetRequiredService<IPasswordHasher<Usuario>>(),
+            app.Logger);
+    }
 }
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Login/Error");
+}
+
 app.UseRouting();
 
-app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
-app.MapStaticAssets();
+// Los recursos estáticos son públicos: la política global no debe redirigirlos al login.
+app.MapStaticAssets().AllowAnonymous();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Login}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-
 app.Run();
-
-// Punto de entrada accesible para las pruebas de integración.
-public partial class Program { }

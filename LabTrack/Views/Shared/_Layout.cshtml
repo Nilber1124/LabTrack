@@ -1,56 +1,49 @@
+@using LabTrack.Reglas
+@{
+    var controlador = ViewContext.RouteData.Values["controller"] as string;
+    var esEncargado = User.IsInRole(NombresRol.Encargado);
+    var esEstudiante = User.IsInRole(NombresRol.Estudiante);
+    string? Actual(string nombre) => controlador == nombre ? "page" : null;
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - LabTrack</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] · LabTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/LabTrack.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LabTrack</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (User.IsInRole("Encargado"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Solicitudes" asp-action="Index">Solicitudes</a>
-                            </li>
-                        }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+    <header class="barra">
+        <span class="marca"><span class="marca-cuadro" aria-hidden="true"></span>LabTrack</span>
+        <nav class="barra-nav" aria-label="Navegación principal">
+            @if (esEstudiante)
+            {
+                <a asp-controller="Catalogo" asp-action="Index" aria-current="@Actual("Catalogo")">Catálogo</a>
+                <a asp-controller="Reservas" asp-action="Index" aria-current="@Actual("Reservas")">Mis reservas</a>
+            }
+            @if (esEncargado)
+            {
+                <a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Solicitudes</a>
+                <a asp-controller="Devoluciones" asp-action="Index" aria-current="@Actual("Devoluciones")">Devoluciones</a>
+            }
         </nav>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            @await Component.InvokeAsync("UsuarioActual")
+            <form asp-controller="Login" asp-action="Salir" method="post">
+                <button type="submit" class="btn btn-enlace">Salir</button>
+            </form>
+        }
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - LabTrack - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <main class="contenido">
+        <partial name="_Mensajes" />
+        @RenderBody()
+    </main>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

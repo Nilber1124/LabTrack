@@ -1,0 +1,10 @@
+@model UsuarioBarraViewModel
+<span class="cuenta">
+    <span class="cuenta-avatar" aria-hidden="true">@Model.Iniciales</span>
+    <span class="cuenta-nombre">@Model.Nombre</span>
+    <span class="codigo">@Model.Codigo</span>
+    @if (Model.Estado == EstadoUsuario.Penalizado)
+    {
+        <partial name="_Badge" model="@("penalizado")" />
+    }
+</span>
