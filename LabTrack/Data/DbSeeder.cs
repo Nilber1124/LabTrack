@@ -10,8 +10,8 @@ namespace LabTrack.Data
     // arranque: solo agrega lo que falta y no repite ni deshace lo que el usuario haya hecho.
     public static class DbSeeder
     {
-        // Un laboratorio tiene varias unidades de cada modelo; también permite simular la paginación.
-        public const int UnidadesPorModelo = 5;
+        // Modelos con una segunda unidad en el laboratorio.
+        private static readonly string[] ModelosConSegundaUnidad = ["LT-0231", "OS-0112", "MM-0308", "RT-0045", "SW-0078"];
 
         private static readonly (string Nombre, string Codigo, string Categoria)[] EquiposDemostracion =
         [
@@ -31,6 +31,7 @@ namespace LabTrack.Data
             ("Analizador lógico Saleae", "AN-0077", "Electrónica"),
             ("Estación de soldadura Hakko FX-888D", "CA-0118", "Electrónica"),
             ("Protoboard · kit de prácticas", "PR-0340", "Electrónica"),
+            ("Analizador de espectro Rigol DSA815", "AE-0033", "Electrónica"),
             ("Router Cisco ISR 4331", "RT-0045", "Redes"),
             ("Router MikroTik hEX", "RT-0052", "Redes"),
             ("Switch Cisco Catalyst 2960", "SW-0078", "Redes"),
@@ -171,8 +172,13 @@ namespace LabTrack.Data
             var sinLaboratorio = await context.Equipos.Where(e => e.Laboratorio == string.Empty).ToListAsync(cancellationToken);
             sinLaboratorio.ForEach(e => e.Laboratorio = LaboratorioDe(nombresCategoria[e.IdCategoria]));
 
-            var unidades = EquiposDemostracion.SelectMany(e => Enumerable.Range(1, UnidadesPorModelo).Select(unidad =>
-                unidad == 1 ? e : (Nombre: $"{e.Nombre} · U{unidad}", Codigo: $"{e.Codigo}-{unidad}", e.Categoria)));
+            // Completa las fotos que falten sin tocar las que alguien haya cambiado.
+            var sinFoto = await context.Equipos.Where(e => e.FotoUrl == null).ToListAsync(cancellationToken);
+            sinFoto.ForEach(e => e.FotoUrl = FotosDemostracion.Para(e.CodigoInventario));
+
+            var unidades = EquiposDemostracion.Concat(EquiposDemostracion
+                .Where(e => ModelosConSegundaUnidad.Contains(e.Codigo))
+                .Select(e => (Nombre: $"{e.Nombre} · U2", Codigo: $"{e.Codigo}-2", e.Categoria)));
 
             context.Equipos.AddRange(unidades
                 .Where(e => !existentes.Contains(e.Codigo))
@@ -181,7 +187,8 @@ namespace LabTrack.Data
                     Nombre = e.Nombre,
                     CodigoInventario = e.Codigo,
                     IdCategoria = categorias[e.Categoria],
-                    Laboratorio = LaboratorioDe(e.Categoria)
+                    Laboratorio = LaboratorioDe(e.Categoria),
+                    FotoUrl = FotosDemostracion.Para(e.Codigo)
                 }));
 
             context.Equipos.AddRange(EquiposDeBajaDemostracion
@@ -192,6 +199,7 @@ namespace LabTrack.Data
                     CodigoInventario = e.Codigo,
                     IdCategoria = categorias[e.Categoria],
                     Laboratorio = LaboratorioDe(e.Categoria),
+                    FotoUrl = FotosDemostracion.Para(e.Codigo),
                     DeBaja = true
                 }));
         }

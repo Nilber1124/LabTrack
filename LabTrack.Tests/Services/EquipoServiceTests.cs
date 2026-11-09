@@ -1,3 +1,4 @@
+using LabTrack.Data;
 using LabTrack.Models;
 using LabTrack.Reglas;
 using LabTrack.Services;
@@ -276,6 +277,25 @@ namespace LabTrack.Tests.Services
             await GuardarAsync(Datos(equipo.IdEquipo), Imagen(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A));
 
             await _imagenes.Received(1).EliminarAsync(UrlNueva, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-CA3")]
+        public async Task GuardarAsync_ReemplazaFotoDeDemostracion_NoLaEliminaDeCloudinary()
+        {
+            var fotoCompartida = FotosDemostracion.Para("LT-0231")!;
+            var equipo = await CrearEquipoAsync("LT-1");
+            await using (var contexto = BaseDatos.CrearContexto())
+            {
+                await contexto.Equipos.Where(e => e.IdEquipo == equipo.IdEquipo)
+                    .ExecuteUpdateAsync(s => s.SetProperty(e => e.FotoUrl, fotoCompartida));
+            }
+
+            await GuardarAsync(Datos(equipo.IdEquipo), ImagenJpeg());
+
+            Assert.Equal(UrlNueva, (await LeerEquipoAsync(equipo.IdEquipo)).FotoUrl);
+            await _imagenes.DidNotReceiveWithAnyArgs().EliminarAsync(default!, default);
         }
 
         [Fact]

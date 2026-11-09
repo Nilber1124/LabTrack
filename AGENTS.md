@@ -32,7 +32,7 @@ jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resu
 
 Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
-`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. Los datos sensibles van en un archivo `.env` en la raíz (ignorado por Git; plantilla en `.env.example`), con `__` en lugar de `:`, y en Azure como variables de entorno. Las fotos necesitan `Cloudinary:{CloudName,ApiKey,ApiSecret}`. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}`, `Semilla:Administrador:{Codigo,Nombre,Contrasena}`, `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}` y `Semilla:ContrasenaDemostracion` (estudiantes de simulación).
+`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. Los datos sensibles van en un archivo `.env` en la raíz (ignorado por Git; plantilla en `.env.example`), con `__` en lugar de `:`, y en Azure como variables de entorno. Las fotos necesitan `Cloudinary:{CloudName,ApiKey,ApiSecret}`. Los usuarios de demostración están en `appsettings.Development.json` (solo datos de prueba, nunca reales): `Semilla:Encargado:{Codigo,Nombre,Contrasena}`, `Semilla:Administrador:{Codigo,Nombre,Contrasena}`, `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}` y `Semilla:ContrasenaDemostracion` (estudiantes de simulación).
 
 ## Reglas de datos
 
@@ -81,7 +81,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 - Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO,ADMINISTRADOR")]` en solicitudes, devoluciones y penalizados; `[Authorize(Roles = "ADMINISTRADOR")]` en equipos y usuarios.
 - `AutoValidateAntiforgeryTokenAttribute` y `ResponseCache(NoStore = true)` como filtros globales. Cookie `HttpOnly` con expiración deslizante.
 - `UseDeveloperExceptionPage` solo en Development; página de error genérica en producción.
-- La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales va en `.env` en local y los datos semilla en User Secrets; en Azure, variables de entorno.
+- La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales va en `.env` en local y en variables de entorno en Azure. Los datos semilla de `appsettings.Development.json` son solo de prueba y no se usan fuera de Development.
 - El usuario que ejecuta una operación se obtiene de los claims, nunca del formulario.
 
 ## Convenciones

@@ -1,4 +1,4 @@
-/* Catálogo de equipos: columnas pares para que las 8 tarjetas de cada página llenen las filas. */
+/* Catálogo de equipos: columnas pares para que las 16 tarjetas de cada página llenen las filas. */
 .tarjetas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .tarjeta { display: flex; flex-direction: column; background: var(--superficie); border-top: 2px solid var(--tinta); }
 .tarjeta-cuerpo { display: flex; flex-direction: column; flex: 1; gap: 8px; padding: 16px; }
@@ -14,7 +14,6 @@
 
 @media (max-width: 600px) {
     .tarjetas { grid-template-columns: minmax(0, 1fr); }
-    .foto-equipo { height: 96px; }
     .con-cargar-mas .paginacion nav { display: none; }
     .con-cargar-mas #cargar-mas:not([hidden]) { display: flex; width: 100%; }
 }

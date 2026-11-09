@@ -43,17 +43,17 @@ Ajusta `ConnectionStrings:DefaultConnection` en `LabTrack/appsettings.json` con 
 
 Copia `.env.example` como `.env` en la raíz del repositorio y llena los valores. Git ignora ese archivo. Sin las claves de Cloudinary la aplicación funciona, pero no permite subir fotos.
 
-### 3. Usuarios de demostración (opcional)
+### 3. Datos de prueba
 
-En entorno Development, la aplicación crea datos de prueba a partir de User Secrets:
+En entorno Development no hay que configurar nada: al arrancar se crean equipos con foto, reservas y estos usuarios, definidos en `LabTrack/appsettings.Development.json`, donde también están sus contraseñas de prueba.
 
-```bash
-dotnet user-secrets set "Semilla:Administrador:Codigo" "ADM-001" --project LabTrack/LabTrack.csproj
-dotnet user-secrets set "Semilla:Administrador:Nombre" "Administrador" --project LabTrack/LabTrack.csproj
-dotnet user-secrets set "Semilla:Administrador:Contrasena" "una-clave-de-prueba" --project LabTrack/LabTrack.csproj
-```
+| Código | Rol |
+| --- | --- |
+| `ADM-001` | Administrador |
+| `ENC-001` | Encargado |
+| `20231458` | Estudiante |
 
-También admite `Semilla:Encargado:*`, `Semilla:Estudiantes:0:*` y `Semilla:ContrasenaDemostracion`, que activa los estudiantes de simulación. Estos datos nunca se crean fuera de Development.
+Estos datos nunca se crean fuera de Development.
 
 ### 4. Ejecutar
 

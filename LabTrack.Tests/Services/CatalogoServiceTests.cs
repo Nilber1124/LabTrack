@@ -137,7 +137,7 @@ namespace LabTrack.Tests.Services
         [Trait("CA", "CA-05")]
         public async Task ListarAsync_MasDeUnaPagina_TotalIncluyeTodosLosEquipos()
         {
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i <= CatalogoService.TamanoPagina; i++)
             {
                 await CrearEquipoAsync($"LT-{i}");
             }
@@ -145,7 +145,7 @@ namespace LabTrack.Tests.Services
             var primera = await ListarAsync();
             var segunda = await ListarAsync(pagina: 2);
 
-            Assert.Equal(9, primera.Paginacion.Total);
+            Assert.Equal(CatalogoService.TamanoPagina + 1, primera.Paginacion.Total);
             Assert.Equal(CatalogoService.TamanoPagina, primera.Equipos.Count);
             Assert.Single(segunda.Equipos);
         }

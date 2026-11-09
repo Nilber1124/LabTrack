@@ -288,7 +288,8 @@ namespace LabTrack.Services
 
         private async Task DescartarAsync(string? url, CancellationToken cancellationToken)
         {
-            if (url is not null)
+            // Las fotos de demostración son compartidas: reemplazarlas aquí no debe borrarlas para los demás.
+            if (url is not null && !FotosDemostracion.EsDeDemostracion(url))
             {
                 await _imagenes.EliminarAsync(url, cancellationToken);
             }

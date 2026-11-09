@@ -8,7 +8,7 @@ namespace LabTrack.Services
 {
     public sealed class CatalogoService : ICatalogoService
     {
-        public const int TamanoPagina = 8;
+        public const int TamanoPagina = 16;
 
         private readonly AppDbContext _context;
         private readonly TimeProvider _tiempo;

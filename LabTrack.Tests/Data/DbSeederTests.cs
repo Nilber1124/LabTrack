@@ -51,7 +51,38 @@ namespace LabTrack.Tests.Data
             await using var contexto = BaseDatos.CrearContexto();
             var estados = await contexto.Reservas.Select(r => r.Estado).Distinct().ToListAsync();
             Assert.Equal(Enum.GetValues<EstadoReserva>().Order(), estados.Order());
-            Assert.Equal(24 * DbSeeder.UnidadesPorModelo + 2, await contexto.Equipos.CountAsync());
+            Assert.Equal(30, await contexto.Equipos.CountAsync(e => !e.DeBaja));
+            Assert.Equal(2, await contexto.Equipos.CountAsync(e => e.DeBaja));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-02")]
+        [Trait("CA", "CA-04")]
+        public async Task SembrarAsync_BaseVacia_TodosLosEquiposTienenFoto()
+        {
+            await SembrarAsync();
+
+            await using var contexto = BaseDatos.CrearContexto();
+            Assert.Equal(0, await contexto.Equipos.CountAsync(e => e.FotoUrl == null));
+        }
+
+        [Fact]
+        [Trait("HU", "HU-02")]
+        [Trait("CA", "CA-04")]
+        public async Task SembrarAsync_EquipoConFotoPropia_NoLaReemplaza()
+        {
+            await SembrarAsync();
+            const string fotoPropia = "https://res.cloudinary.com/demo/image/upload/v1/propia.jpg";
+            await using (var contexto = BaseDatos.CrearContexto())
+            {
+                await contexto.Equipos.Where(e => e.CodigoInventario == "LT-0231")
+                    .ExecuteUpdateAsync(s => s.SetProperty(e => e.FotoUrl, fotoPropia));
+            }
+
+            await SembrarAsync();
+
+            await using var lectura = BaseDatos.CrearContexto();
+            Assert.Equal(fotoPropia, await lectura.Equipos.Where(e => e.CodigoInventario == "LT-0231").Select(e => e.FotoUrl).SingleAsync());
         }
 
         [Fact]
