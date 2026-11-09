@@ -19,7 +19,7 @@ builder.Services
     .AddSessionStateTempDataProvider();
 
 var cadenaConexion = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection (User Secrets o variable de entorno).");
+    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en la configuración.");
 
 builder.Services.AddDbContext<AppDbContext>(opciones => opciones.UseSqlServer(cadenaConexion));
 

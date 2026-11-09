@@ -32,7 +32,7 @@ jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resu
 
 Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
-Configuración local en User Secrets del proyecto web: `ConnectionStrings:DefaultConnection` y, en Development, `Semilla:Encargado:{Codigo,Nombre,Contrasena}` y `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}`.
+`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}` y `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}`.
 
 ## Reglas de datos
 
@@ -79,7 +79,7 @@ Configuración local en User Secrets del proyecto web: `ConnectionStrings:Defaul
 - Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO")]` en solicitudes y devoluciones.
 - `AutoValidateAntiforgeryTokenAttribute` y `ResponseCache(NoStore = true)` como filtros globales. Cookie `HttpOnly` con expiración deslizante.
 - `UseDeveloperExceptionPage` solo en Development; página de error genérica en producción.
-- Cadena de conexión y credenciales semilla fuera del repositorio: User Secrets en local, variables de entorno en Azure.
+- La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales y los datos semilla van fuera: User Secrets en local, variables de entorno en Azure.
 - El usuario que ejecuta una operación se obtiene de los claims, nunca del formulario.
 
 ## Convenciones
