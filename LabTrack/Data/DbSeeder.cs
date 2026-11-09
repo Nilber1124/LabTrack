@@ -47,6 +47,8 @@ namespace LabTrack.Data
             ("Switch Cisco Catalyst 2950", "SW-0011", "Redes")
         ];
 
+        private const string CodigoEstudianteDeBaja = "20199904";
+
         private static readonly (string Codigo, string Nombre, EstadoUsuario Estado)[] EstudiantesDemostracion =
         [
             ("20240312", "Camila Paredes León", EstadoUsuario.Activo),
@@ -59,7 +61,8 @@ namespace LabTrack.Data
             ("20231190", "Bruno Castillo Arias", EstadoUsuario.Activo),
             ("20228813", "Ximena Torres Rojas", EstadoUsuario.Activo),
             ("20237745", "Hugo Vargas Medina", EstadoUsuario.Activo),
-            ("20216602", "Nicolás Flores Ramos", EstadoUsuario.Penalizado)
+            ("20216602", "Nicolás Flores Ramos", EstadoUsuario.Penalizado),
+            (CodigoEstudianteDeBaja, "Paula Rojas Gamarra", EstadoUsuario.Activo)
         ];
 
         public static async Task SembrarAsync(
@@ -149,7 +152,8 @@ namespace LabTrack.Data
                     Codigo = estudiante.Codigo,
                     Nombre = estudiante.Nombre,
                     IdRol = idRol,
-                    Estado = estudiante.Estado
+                    Estado = estudiante.Estado,
+                    DeBaja = estudiante.Codigo == CodigoEstudianteDeBaja
                 };
                 usuario.PasswordHash = hasher.HashPassword(usuario, contrasena);
                 context.Usuarios.Add(usuario);

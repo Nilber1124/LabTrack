@@ -32,6 +32,14 @@ namespace LabTrack.Reglas
         public const string EstudianteNoEncontrado = "El estudiante indicado no existe";
         public const string PenalizacionNoActiva = "El estudiante no tiene una penalización activa";
 
+        // Gestión de usuarios
+        public const string CodigoUsuarioRepetido = "Ya existe un usuario con ese código";
+        public const string UsuarioNoEncontrado = "El usuario indicado no existe";
+        public const string RolNoValido = "Selecciona un rol válido";
+        public const string ContrasenaObligatoria = "Escribe una contraseña";
+        public const string UsuarioYaDeBaja = "El usuario ya está de baja";
+        public const string UsuarioNoEstaDeBaja = "El usuario no está de baja";
+
         // Gestión de equipos
         public const string CodigoRepetido = "Ya existe un equipo con ese código";
         public const string LaboratorioNoValido = "Selecciona un laboratorio válido";

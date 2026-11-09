@@ -10,7 +10,7 @@ namespace LabTrack.Services
 {
     public sealed class EquipoService : IEquipoService
     {
-        public const int TamanoPagina = 6;
+        public const int TamanoPagina = 20;
         private const int ErrorClaveDuplicada = 2601;
         private const int ErrorRestriccionUnica = 2627;
 

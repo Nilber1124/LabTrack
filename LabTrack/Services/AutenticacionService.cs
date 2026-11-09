@@ -44,7 +44,7 @@ namespace LabTrack.Services
 
             var usuario = await _context.Usuarios
                 .Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.Codigo == codigo, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Codigo == codigo && !u.DeBaja, cancellationToken);
 
             if (usuario is null)
             {
@@ -88,6 +88,9 @@ namespace LabTrack.Services
                 Rol = usuario.Rol.Nombre
             });
         }
+
+        public Task<bool> EstaActivoAsync(int idUsuario, CancellationToken cancellationToken = default)
+            => _context.Usuarios.AsNoTracking().AnyAsync(u => u.IdUsuario == idUsuario && !u.DeBaja, cancellationToken);
 
         public Task<UsuarioBarraViewModel?> ObtenerResumenAsync(int idUsuario, CancellationToken cancellationToken = default)
             => _context.Usuarios

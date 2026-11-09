@@ -38,7 +38,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 
 - Un único `AppDbContext`, un `DbSet<T>` por entidad; el nombre del DbSet es el de la tabla (plural, sin `ToTable`). Sin modelos sin `DbSet`.
 - Claves `Id<Entidad>` (int, identidad). Navegaciones en PascalCase.
-- `Rol` (ESTUDIANTE, ENCARGADO, ADMINISTRADOR); `Usuario` (Codigo único, Nombre, hash de contraseña, IdRol, Estado, IntentosFallidos, BloqueadoHasta); `Categoria` (Cómputo, Electrónica, Redes); `Equipo` (Nombre, CodigoInventario único, IdCategoria, Laboratorio, FotoUrl, DeBaja, Version); `Reserva` (IdUsuario, IdEquipo, Inicio, Fin, Estado, MotivoRechazo de 200, FechaDevolucionReal, FechaSolicitud, Version).
+- `Rol` (ESTUDIANTE, ENCARGADO, ADMINISTRADOR); `Usuario` (Codigo único, Nombre, hash de contraseña, IdRol, Estado, IntentosFallidos, BloqueadoHasta, DeBaja); `Categoria` (Cómputo, Electrónica, Redes); `Equipo` (Nombre, CodigoInventario único, IdCategoria, Laboratorio, FotoUrl, DeBaja, Version); `Reserva` (IdUsuario, IdEquipo, Inicio, Fin, Estado, MotivoRechazo de 200, FechaDevolucionReal, FechaSolicitud, Version).
 - Enums como texto: `EstadoReserva {Pendiente, Aprobada, Rechazada, Devuelta}`, `EstadoUsuario {Activo, Penalizado}`.
 - Relaciones y `OnDelete` explícitos en `OnModelCreating`: `Restrict` hacia equipos y usuarios con historial; `SetNull` en referencias opcionales.
 - Índices: únicos en `Usuario.Codigo` y `Equipo.CodigoInventario`; compuesto `Reserva (IdEquipo, Inicio, Fin)`; `Equipo.IdCategoria`; único filtrado de `Reserva.IdUsuario` para estados Pendiente y Aprobada (CA-10).
@@ -48,8 +48,8 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 
 ## Capas
 
-- Controladores delgados que dependen de interfaces inyectadas: `IAutenticacionService`, `ICatalogoService`, `IReservaService`, `IDevolucionService`, `IEquipoService`. Sin capa de repositorios: los servicios usan `AppDbContext`.
-- `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` y `PenalizadosController` (HU-05), `EquiposController` (gestión de equipos).
+- Controladores delgados que dependen de interfaces inyectadas: `IAutenticacionService`, `ICatalogoService`, `IReservaService`, `IDevolucionService`, `IEquipoService`, `IUsuarioService`. Sin capa de repositorios: los servicios usan `AppDbContext`.
+- `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` y `PenalizadosController` (HU-05), `EquiposController` y `UsuariosController` (solo administrador).
 - `AutenticacionService` CA-01 a 03; `CatalogoService` CA-04 a 06; `ReservaService` CA-08 a 13; `DevolucionService` CA-14 a 16 y penalizados; `EquipoService` gestión de equipos. Las fotos pasan por `IAlmacenImagenes` (hoy disco local; Cloudinary se conecta ahí).
 - `Reglas/`: clases pequeñas y deterministas, sin base de datos ni reloj propio (cruce de horarios, validación de fechas, política de bloqueo, política de penalización). Los servicios las orquestan con `AppDbContext` y `TimeProvider`.
 - Los errores de negocio se devuelven como resultados tipados (`ResultadoOperacion`), no como excepciones de control de flujo.
@@ -71,13 +71,14 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 - Devolver exactamente a la hora de fin no penaliza; solo se penaliza si la hora actual es estrictamente posterior.
 - Concurrencia: crear y aprobar revalidan dentro de una transacción que bloquea la fila del equipo con `UPDLOCK, HOLDLOCK`. `Reserva` y `Equipo` tienen token `rowversion` (`Version`). Los conflictos devuelven un resultado controlado.
 - Aprobar es una sola operación atómica.
+- La gestión de usuarios crea y da de baja estudiantes y encargados; los administradores no se gestionan ahí. El rol solo se elige al crear. Un usuario con reserva activa no se puede dar de baja y la baja cierra su sesión de inmediato.
 - Un equipo Prestado no se puede dar de baja. La baja lo oculta del catálogo, conserva su historial y es reversible.
 - Del mockup se implementa lo que sostiene un CA y lo que es solo presentación; se omite lo que exige datos o reglas nuevas.
 
 ## Seguridad
 
 - `PasswordHasher<Usuario>`; nunca texto plano. Mismo mensaje para código inexistente y contraseña errónea.
-- Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO,ADMINISTRADOR")]` en solicitudes, devoluciones y penalizados; `[Authorize(Roles = "ADMINISTRADOR")]` en equipos.
+- Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO,ADMINISTRADOR")]` en solicitudes, devoluciones y penalizados; `[Authorize(Roles = "ADMINISTRADOR")]` en equipos y usuarios.
 - `AutoValidateAntiforgeryTokenAttribute` y `ResponseCache(NoStore = true)` como filtros globales. Cookie `HttpOnly` con expiración deslizante.
 - `UseDeveloperExceptionPage` solo en Development; página de error genérica en producción.
 - La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales y los datos semilla van fuera: User Secrets en local, variables de entorno en Azure.

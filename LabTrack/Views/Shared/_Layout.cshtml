@@ -37,6 +37,7 @@
             @if (esAdministrador)
             {
                 <a asp-controller="Equipos" asp-action="Index" aria-current="@Actual("Equipos")">Equipos</a>
+                <a asp-controller="Usuarios" asp-action="Index" aria-current="@Actual("Usuarios")">Usuarios</a>
             }
         </nav>
         @if (User.Identity?.IsAuthenticated == true)

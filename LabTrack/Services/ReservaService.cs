@@ -84,7 +84,7 @@ namespace LabTrack.Services
             }
 
             var estadoEstudiante = await _context.Usuarios.AsNoTracking()
-                .Where(u => u.IdUsuario == idUsuario && u.Rol.Nombre == NombresRol.Estudiante)
+                .Where(u => u.IdUsuario == idUsuario && u.Rol.Nombre == NombresRol.Estudiante && !u.DeBaja)
                 .Select(u => (EstadoUsuario?)u.Estado)
                 .FirstOrDefaultAsync(cancellationToken);
             if (estadoEstudiante is null)

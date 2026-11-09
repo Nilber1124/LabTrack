@@ -34,6 +34,9 @@ namespace LabTrack.Models
 
         public DateTime? BloqueadoHasta { get; set; }
 
+        // Impide iniciar sesión y conserva el historial.
+        public bool DeBaja { get; set; }
+
         [ValidateNever]
         public Rol Rol { get; set; } = null!;
 

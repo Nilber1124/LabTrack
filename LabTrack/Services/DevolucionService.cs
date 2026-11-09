@@ -124,7 +124,7 @@ namespace LabTrack.Services
         {
             busqueda = string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim();
 
-            var penalizados = _context.Usuarios.AsNoTracking().Where(u => u.Estado == EstadoUsuario.Penalizado);
+            var penalizados = _context.Usuarios.AsNoTracking().Where(u => u.Estado == EstadoUsuario.Penalizado && !u.DeBaja);
             if (busqueda is not null)
             {
                 penalizados = penalizados.Where(u => u.Nombre.Contains(busqueda) || u.Codigo.Contains(busqueda));
@@ -200,7 +200,7 @@ namespace LabTrack.Services
             => _context.Reservas.AsNoTracking().CountAsync(r => r.Estado == EstadoReserva.Pendiente, cancellationToken);
 
         public Task<int> ContarPenalizadosAsync(CancellationToken cancellationToken = default)
-            => _context.Usuarios.AsNoTracking().CountAsync(u => u.Estado == EstadoUsuario.Penalizado, cancellationToken);
+            => _context.Usuarios.AsNoTracking().CountAsync(u => u.Estado == EstadoUsuario.Penalizado && !u.DeBaja, cancellationToken);
 
         public async Task<FichaEstudianteViewModel?> ObtenerFichaAsync(int idUsuario, CancellationToken cancellationToken = default)
         {

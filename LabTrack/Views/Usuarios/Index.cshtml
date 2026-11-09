@@ -1,0 +1,111 @@
+@using LabTrack.Reglas
+@model GestionUsuariosViewModel
+@{
+    ViewData["Title"] = "Usuarios";
+    string? Actual(string? rol) => Model.RolSeleccionado == rol ? "true" : null;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/equipos.css" asp-append-version="true" />
+}
+<div class="encabezado">
+    <div>
+        <h1>Gestión de usuarios</h1>
+        <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta · @Model.TotalActivos @(Model.TotalActivos == 1 ? "activo" : "activos") · @Model.TotalDeBaja de baja</span>
+    </div>
+    <div class="equipo-herramientas">
+        <form asp-action="Index" method="get" class="busqueda">
+            <input type="hidden" name="rol" value="@Model.RolSeleccionado" />
+            <div class="campo">
+                <label for="busqueda">Buscar</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda" class="entrada" type="search" maxlength="120" placeholder="Nombre o código" />
+            </div>
+            <button type="submit" class="btn btn-secundario">Buscar</button>
+        </form>
+        <a class="btn btn-primario js-nuevo-usuario" asp-action="Nuevo">Nuevo usuario</a>
+    </div>
+</div>
+
+<div class="filtros">
+    <span class="filtros-titulo">Rol</span>
+    <div class="segmentos">
+        <a asp-action="Index" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(null)">Todos · @Model.TotalGeneral</a>
+        <a asp-action="Index" asp-route-rol="@NombresRol.Estudiante" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(NombresRol.Estudiante)">Estudiantes · @Model.TotalEstudiantes</a>
+        <a asp-action="Index" asp-route-rol="@NombresRol.Encargado" asp-route-busqueda="@Model.Busqueda" aria-current="@Actual(NombresRol.Encargado)">Encargados · @Model.TotalEncargados</a>
+    </div>
+</div>
+
+@if (Model.Usuarios.Count == 0)
+{
+    <div class="vacio" role="status">
+        <b>No hay usuarios que coincidan con la búsqueda</b>
+        <a class="btn btn-secundario" asp-action="Index">Limpiar búsqueda</a>
+    </div>
+}
+else
+{
+    <table class="tabla tabla-gestion tabla-usuarios">
+        <thead>
+            <tr><th scope="col">Usuario</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var usuario in Model.Usuarios)
+            {
+                <tr data-id="@usuario.IdUsuario" data-nombre="@usuario.Nombre" data-codigo="@usuario.Codigo" data-rol="@usuario.Rol">
+                    <td data-etiqueta="Usuario"><b>@usuario.Nombre</b><small>@usuario.Codigo</small></td>
+                    <td data-etiqueta="Rol">@usuario.RolEtiqueta</td>
+                    <td data-etiqueta="Estado"><partial name="_Badge" model="@usuario.Situacion" /></td>
+                    <td>
+                        <div class="acciones">
+                            <a class="btn btn-secundario js-editar-usuario" asp-action="Editar" asp-route-id="@usuario.IdUsuario">Editar</a>
+                            @if (usuario.DeBaja)
+                            {
+                                <form asp-action="Reactivar" method="post">
+                                    <input type="hidden" name="id" value="@usuario.IdUsuario" />
+                                    <button type="submit" class="btn btn-secundario">Reactivar</button>
+                                </form>
+                            }
+                            else if (usuario.TieneReservaActiva)
+                            {
+                                <button type="button" class="btn btn-secundario" disabled>Dar de baja</button>
+                                <span class="ayuda">Tiene una reserva activa</span>
+                            }
+                            else
+                            {
+                                <form asp-action="DarDeBaja" method="post" class="js-dar-baja">
+                                    <input type="hidden" name="id" value="@usuario.IdUsuario" />
+                                    <button type="submit" class="btn btn-peligro">Dar de baja</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <partial name="_Paginacion" model="Model.Paginacion" />
+}
+
+<dialog id="modal-usuario" class="modal modal-ancho" aria-labelledby="usuario-titulo">
+    <form asp-action="Guardar" method="post" class="formulario">
+        <h2 id="usuario-titulo">Nuevo usuario</h2>
+        <partial name="_CamposUsuario" model="Model.Formulario" />
+        <div class="modal-acciones">
+            <button type="button" class="btn btn-secundario" data-cerrar>Cancelar</button>
+            <button type="submit" class="btn btn-primario">Guardar usuario</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="modal-baja" class="modal" aria-labelledby="baja-titulo">
+    <h2 id="baja-titulo"></h2>
+    <p id="baja-detalle"></p>
+    <div class="modal-acciones">
+        <button type="button" class="btn btn-secundario" data-cerrar autofocus>Cancelar</button>
+        <button type="button" class="btn btn-peligro" id="confirmar-baja">Sí, dar de baja</button>
+    </div>
+</dialog>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/usuarios.js" asp-append-version="true"></script>
+}

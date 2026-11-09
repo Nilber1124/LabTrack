@@ -81,6 +81,14 @@ namespace LabTrack.Tests.Seguridad
 
         [Fact]
         [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-USU")]
+        public void Usuarios_RolEsperado_EsSoloAdministrador()
+        {
+            Assert.Equal("ADMINISTRADOR", Roles<UsuariosController>());
+        }
+
+        [Fact]
+        [Trait("HU", "ADM")]
         [Trait("CA", "ADM-CA2")]
         public void Equipos_RolEsperado_EsSoloAdministrador()
         {

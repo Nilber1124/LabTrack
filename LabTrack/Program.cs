@@ -1,7 +1,9 @@
+using LabTrack.Controllers;
 using LabTrack.Data;
 using LabTrack.Models;
 using LabTrack.Services;
 using LabTrack.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +34,7 @@ builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<IEquipoService, EquipoService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddSingleton<IAlmacenImagenes, AlmacenImagenesLocal>();
 
 builder.Services.AddDistributedMemoryCache();
@@ -53,6 +56,19 @@ builder.Services
         opciones.AccessDeniedPath = "/Login/Denegado";
         opciones.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         opciones.SlidingExpiration = true;
+
+        // Una cuenta dada de baja pierde el acceso de inmediato, aunque tenga la sesión abierta.
+        opciones.Events.OnValidatePrincipal = async contexto =>
+        {
+            var idUsuario = contexto.Principal?.ObtenerIdUsuario();
+            var autenticacion = contexto.HttpContext.RequestServices.GetRequiredService<IAutenticacionService>();
+
+            if (idUsuario is null || !await autenticacion.EstaActivoAsync(idUsuario.Value, contexto.HttpContext.RequestAborted))
+            {
+                contexto.RejectPrincipal();
+                await contexto.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
     });
 
 // Todo lo que no declare lo contrario exige un usuario autenticado.

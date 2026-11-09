@@ -1,0 +1,18 @@
+@model FormularioUsuarioViewModel
+@{
+    ViewData["Title"] = Model.EsNuevo ? "Nuevo usuario" : "Editar usuario";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/equipos.css" asp-append-version="true" />
+}
+<h1>@ViewData["Title"]</h1>
+<form asp-action="Guardar" method="post" class="formulario equipo-formulario">
+    <partial name="_CamposUsuario" model="Model" />
+    <div class="acciones">
+        <a class="btn btn-secundario" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primario">Guardar usuario</button>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

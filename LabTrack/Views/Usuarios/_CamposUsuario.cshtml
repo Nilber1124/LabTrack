@@ -1,0 +1,38 @@
+@using LabTrack.Reglas
+@model FormularioUsuarioViewModel
+<input asp-for="IdUsuario" type="hidden" id="usuario-id" />
+<div asp-validation-summary="ModelOnly" class="alerta alerta-error validacion-resumen" role="alert"></div>
+<div class="campo">
+    <label asp-for="Nombre"></label>
+    <input asp-for="Nombre" class="entrada" maxlength="120" />
+    <span asp-validation-for="Nombre" class="error-campo"></span>
+</div>
+<div class="equipo-selectores">
+    <div class="campo">
+        <label asp-for="Codigo"></label>
+        <input asp-for="Codigo" class="entrada" maxlength="20" autocomplete="off" />
+        <span asp-validation-for="Codigo" class="error-campo"></span>
+    </div>
+    <div class="campo">
+        <label asp-for="Rol"></label>
+        <select asp-for="Rol" class="entrada" disabled="@(!Model.EsNuevo)">
+            <option value="">Selecciona…</option>
+            <option value="@NombresRol.Estudiante">Estudiante</option>
+            <option value="@NombresRol.Encargado">Encargado</option>
+        </select>
+        <span asp-validation-for="Rol" class="error-campo"></span>
+    </div>
+</div>
+<div class="equipo-selectores">
+    <div class="campo">
+        <label asp-for="Contrasena"></label>
+        <input asp-for="Contrasena" class="entrada" autocomplete="new-password" maxlength="100" />
+        <span asp-validation-for="Contrasena" class="error-campo"></span>
+    </div>
+    <div class="campo">
+        <label asp-for="ConfirmarContrasena"></label>
+        <input asp-for="ConfirmarContrasena" class="entrada" autocomplete="new-password" maxlength="100" />
+        <span asp-validation-for="ConfirmarContrasena" class="error-campo"></span>
+    </div>
+</div>
+<p class="ayuda" id="usuario-ayuda-clave">@(Model.EsNuevo ? "Mínimo 8 caracteres." : "Déjala en blanco para conservar la actual.")</p>
