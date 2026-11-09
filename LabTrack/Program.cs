@@ -29,6 +29,7 @@ builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAutenticacionService, AutenticacionService>();
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
+builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(opciones =>

@@ -32,6 +32,8 @@ jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resu
 
 Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
+Configuración local en User Secrets del proyecto web: `ConnectionStrings:DefaultConnection` y, en Development, `Semilla:Encargado:{Codigo,Nombre,Contrasena}` y `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}`.
+
 ## Reglas de datos
 
 - Un único `AppDbContext`, un `DbSet<T>` por entidad; el nombre del DbSet es el de la tabla (plural, sin `ToTable`). Sin modelos sin `DbSet`.

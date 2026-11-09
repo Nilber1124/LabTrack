@@ -1,0 +1,83 @@
+@model DevolucionesViewModel
+@{
+    ViewData["Title"] = "Devoluciones";
+}
+<div class="encabezado">
+    <div>
+        <h1>Devoluciones</h1>
+        <span class="ayuda">@Model.Paginacion.Total reservas activas · @Model.TotalVencidas vencidas · ahora: @Formato.Fecha(Model.Ahora), @Formato.Hora(Model.Ahora)</span>
+    </div>
+    <form asp-action="Index" method="get" class="busqueda">
+        <div class="campo">
+            <label for="busqueda">Buscar reserva activa</label>
+            <input id="busqueda" name="busqueda" value="@Model.Busqueda" class="entrada" type="search" maxlength="120" placeholder="Estudiante, código o equipo" />
+        </div>
+        <button type="submit" class="btn btn-primario">Buscar</button>
+    </form>
+</div>
+
+@if (Model.Reservas.Count == 0)
+{
+    <div class="vacio" role="status">
+        @if (Model.Busqueda is null)
+        {
+            <b>No hay reservas activas</b>
+            <span class="ayuda">Las reservas aprobadas aparecerán aquí.</span>
+        }
+        else
+        {
+            <b>No hay reservas activas que coincidan con «@Model.Busqueda»</b>
+            <span class="ayuda">Revisa el código o busca por nombre del estudiante.</span>
+            <a class="btn btn-secundario" asp-action="Index">Limpiar búsqueda</a>
+        }
+    </div>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr><th scope="col">Estudiante</th><th scope="col">Equipo</th><th scope="col">Fin programado</th><th scope="col">Estado</th><th scope="col">Acción</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var reserva in Model.Reservas)
+            {
+                <tr class="@(reserva.Vencida ? "tabla-vencida" : null)"
+                    data-estudiante="@reserva.Estudiante" data-equipo="@reserva.Equipo (@reserva.CodigoInventario)"
+                    data-fin="@Formato.Hora(reserva.Fin)" data-vencida="@(reserva.Vencida ? "true" : "false")">
+                    <td data-etiqueta="Estudiante"><b>@reserva.Estudiante</b><small>@reserva.CodigoEstudiante</small></td>
+                    <td data-etiqueta="Equipo">@reserva.Equipo<small>@reserva.CodigoInventario</small></td>
+                    <td data-etiqueta="Fin programado">@Formato.Fecha(reserva.Fin) · @Formato.Hora(reserva.Fin)<small>@reserva.Nota</small></td>
+                    <td data-etiqueta="Estado"><partial name="_Badge" model="@reserva.Situacion" /></td>
+                    <td>
+                        <form asp-action="Marcar" method="post" class="js-devolver">
+                            <input type="hidden" name="id" value="@reserva.IdReserva" />
+                            <button type="submit" class="btn btn-primario">Marcar Devolución</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <partial name="_Paginacion" model="Model.Paginacion" />
+}
+
+<dialog id="modal-devolucion" class="modal" aria-labelledby="devolucion-titulo">
+    <h2 id="devolucion-titulo">¿Confirmar devolución?</h2>
+    <p id="devolucion-resumen"></p>
+    <div class="alerta alerta-error" id="devolucion-tardia" role="alert" hidden>
+        <strong id="devolucion-fin"></strong>
+        Al confirmar, el estudiante quedará <b>Penalizado</b>.
+    </div>
+    <p id="devolucion-a-tiempo">El equipo pasará a <partial name="_Badge" model="@("disponible")" /> de inmediato.</p>
+    <div class="modal-acciones">
+        <button type="button" class="btn btn-secundario" data-cerrar autofocus>Cancelar</button>
+        <button type="button" class="btn btn-primario" id="confirmar-devolucion">Confirmar devolución</button>
+    </div>
+</dialog>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/devoluciones.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/devoluciones.js" asp-append-version="true"></script>
+}
