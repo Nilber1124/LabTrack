@@ -10,10 +10,10 @@ namespace LabTrack.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un estudiante vÃ¡lido.")]
+        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un estudiante válido.")]
         public long EstudianteId { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un equipo vÃ¡lido.")]
+        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un equipo válido.")]
         public long EquipoId { get; set; }
 
         [Column(TypeName = "datetimeoffset")]
@@ -22,13 +22,13 @@ namespace LabTrack.Models
         [Column(TypeName = "datetimeoffset")]
         public DateTimeOffset Fin { get; set; }
 
-        [EnumDataType(typeof(EstadoReserva), ErrorMessage = "El estado de la reserva no es vÃ¡lido.")]
+        [EnumDataType(typeof(EstadoReserva), ErrorMessage = "El estado de la reserva no es válido.")]
         public EstadoReserva Estado { get; set; } = EstadoReserva.Pendiente;
 
         [StringLength(255, ErrorMessage = "El motivo de rechazo no puede exceder los 255 caracteres.")]
         public string? MotivoRechazo { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "El encargado no es vÃ¡lido.")]
+        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "El encargado no es válido.")]
         public long? ResueltaPor { get; set; }
 
         // Los instantes DateTime se guardan en UTC.
