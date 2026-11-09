@@ -8,12 +8,16 @@ namespace LabTrack.Tests.Soporte
 
         public static FakeTimeProvider En(DateTime horaLima)
         {
-            var reloj = new FakeTimeProvider(new DateTimeOffset(horaLima, DesfaseLima));
+            // TimeProvider exige un instante con desfase cero; si no, aplicaría la zona dos veces.
+            var reloj = new FakeTimeProvider(EnUtc(horaLima));
             reloj.SetLocalTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
             return reloj;
         }
 
         public static void Fijar(FakeTimeProvider reloj, DateTime horaLima)
-            => reloj.SetUtcNow(new DateTimeOffset(horaLima, DesfaseLima));
+            => reloj.SetUtcNow(EnUtc(horaLima));
+
+        private static DateTimeOffset EnUtc(DateTime horaLima)
+            => new DateTimeOffset(horaLima, DesfaseLima).ToUniversalTime();
     }
 }
