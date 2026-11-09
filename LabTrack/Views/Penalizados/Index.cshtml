@@ -1,0 +1,79 @@
+@model PenalizadosViewModel
+@{
+    ViewData["Title"] = "Penalizados";
+}
+<div class="encabezado">
+    <div>
+        <h1>Estudiantes penalizados</h1>
+        <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta sin permiso para reservar</span>
+    </div>
+    <form asp-action="Index" method="get" class="busqueda">
+        <div class="campo">
+            <label for="busqueda">Buscar</label>
+            <input id="busqueda" name="busqueda" value="@Model.Busqueda" class="entrada" type="search" maxlength="120" placeholder="Nombre o código" />
+        </div>
+        <button type="submit" class="btn btn-primario">Buscar</button>
+    </form>
+</div>
+
+@if (Model.Penalizados.Count == 0)
+{
+    <div class="vacio" role="status">
+        @if (Model.Busqueda is null)
+        {
+            <b>No hay estudiantes penalizados</b>
+            <span class="ayuda">Todas las devoluciones se hicieron a tiempo.</span>
+        }
+        else
+        {
+            <b>No hay estudiantes penalizados que coincidan con «@Model.Busqueda»</b>
+            <a class="btn btn-secundario" asp-action="Index">Limpiar búsqueda</a>
+        }
+    </div>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr><th scope="col">Estudiante</th><th scope="col">Fecha de penalización</th><th scope="col">Motivo</th><th scope="col">Estado</th><th scope="col">Acción</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var penalizado in Model.Penalizados)
+            {
+                var fecha = penalizado.FechaPenalizacion is { } valor ? Formato.FechaHora(valor) : "—";
+                <tr data-nombre="@penalizado.Nombre" data-detalle="Penalizado desde @fecha · @penalizado.Motivo">
+                    <td data-etiqueta="Estudiante"><b>@penalizado.Nombre</b><small>@penalizado.Codigo</small></td>
+                    <td data-etiqueta="Fecha de penalización">@fecha</td>
+                    <td data-etiqueta="Motivo">@penalizado.Motivo</td>
+                    <td data-etiqueta="Estado"><partial name="_Badge" model="@("penalizado")" /></td>
+                    <td>
+                        <form asp-action="Levantar" method="post" class="js-levantar">
+                            <input type="hidden" name="id" value="@penalizado.IdUsuario" />
+                            <button type="submit" class="btn btn-primario">Levantar penalización</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <partial name="_Paginacion" model="Model.Paginacion" />
+}
+
+<p class="ayuda">Las penalizaciones se generan automáticamente al registrar una devolución tardía en <a asp-controller="Devoluciones" asp-action="Index">Devoluciones</a>.</p>
+
+<dialog id="modal-levantar" class="modal" aria-labelledby="levantar-titulo">
+    <h2 id="levantar-titulo"></h2>
+    <p id="levantar-detalle"></p>
+    <p>Podrá volver a reservar equipos de inmediato.</p>
+    <div class="modal-acciones">
+        <button type="button" class="btn btn-secundario" data-cerrar autofocus>Cancelar</button>
+        <button type="button" class="btn btn-primario" id="confirmar-levantar">Sí, levantar penalización</button>
+    </div>
+</dialog>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/devoluciones.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/penalizados.js" asp-append-version="true"></script>
+}

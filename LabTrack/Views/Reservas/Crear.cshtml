@@ -21,6 +21,22 @@
         <span class="codigo">Inv. @Model.CodigoInventario</span>
     </aside>
 
+    @if (Model.EstudiantePenalizado)
+    {
+        <div class="alerta alerta-error reserva-penalizado" role="alert">
+            <partial name="_Badge" model="@("penalizado")" />
+            <strong>@LabTrack.Reglas.Mensajes.EstudiantePenalizado</strong>
+            @if (Model.MotivoPenalizacion is not null)
+            {
+                <span>@Model.MotivoPenalizacion</span>
+            }
+            <span>Mientras la penalización esté activa, el formulario de reserva no está disponible.</span>
+            <span><b>¿Qué hacer?</b> Acércate al encargado del laboratorio para revisar tu caso.</span>
+            <a class="btn btn-secundario" asp-action="Index">Ver mis reservas</a>
+        </div>
+    }
+    else
+    {
     <form asp-action="Crear" method="post" id="form-reserva" class="formulario">
         <h4>Datos de la reserva</h4>
         <input asp-for="IdEquipo" type="hidden" />
@@ -70,8 +86,12 @@
             <a class="btn btn-secundario" asp-controller="Catalogo" asp-action="Index">Cancelar</a>
         </div>
     </form>
+    }
 </div>
 
 @section Scripts {
-    <script src="~/js/reservas.js" asp-append-version="true"></script>
+    @if (!Model.EstudiantePenalizado)
+    {
+        <script src="~/js/reservas.js" asp-append-version="true"></script>
+    }
 }

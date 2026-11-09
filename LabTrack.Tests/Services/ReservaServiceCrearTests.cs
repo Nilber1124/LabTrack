@@ -119,14 +119,31 @@ namespace LabTrack.Tests.Services
         }
 
         [Fact]
-        [Trait("HU", "HU-03")]
-        [Trait("CA", "CA-08")]
-        public async Task CrearAsync_EstudiantePenalizado_PuedeReservar()
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
+        public async Task CrearAsync_EstudiantePenalizado_SeRechazaSinCrearReserva()
         {
             var estudiante = await CrearUsuarioAsync("E1", estado: EstadoUsuario.Penalizado);
             var equipo = await CrearEquipoAsync("LT-1");
 
-            Assert.True((await CrearAsync(estudiante.IdUsuario, equipo.IdEquipo)).Exitoso);
+            var resultado = await CrearAsync(estudiante.IdUsuario, equipo.IdEquipo);
+
+            Assert.Equal(Mensajes.EstudiantePenalizado, resultado.Mensaje);
+            Assert.Equal(0, await ContarReservasAsync());
+        }
+
+        [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
+        public async Task ObtenerFormularioAsync_EstudiantePenalizado_LoIndica()
+        {
+            var estudiante = await CrearUsuarioAsync("E1", estado: EstadoUsuario.Penalizado);
+            var equipo = await CrearEquipoAsync("LT-1");
+
+            await using var contexto = BaseDatos.CrearContexto();
+            var formulario = await new ReservaService(contexto, Reloj).ObtenerFormularioAsync(estudiante.IdUsuario, equipo.IdEquipo);
+
+            Assert.True(formulario!.EstudiantePenalizado);
         }
 
         [Fact]
@@ -139,7 +156,7 @@ namespace LabTrack.Tests.Services
             await CrearReservaAsync(otro.IdUsuario, equipo.IdEquipo, Ahora.AddHours(-1), Ahora.AddHours(1), EstadoReserva.Aprobada);
 
             await using var contexto = BaseDatos.CrearContexto();
-            var formulario = await new ReservaService(contexto, Reloj).ObtenerFormularioAsync(equipo.IdEquipo);
+            var formulario = await new ReservaService(contexto, Reloj).ObtenerFormularioAsync(otro.IdUsuario, equipo.IdEquipo);
 
             Assert.False(formulario!.EquipoDisponible);
         }

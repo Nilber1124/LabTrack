@@ -49,7 +49,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 ## Capas
 
 - Controladores delgados que dependen de interfaces inyectadas: `IAutenticacionService`, `ICatalogoService`, `IReservaService`, `IDevolucionService`. Sin capa de repositorios: los servicios usan `AppDbContext`.
-- `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` (HU-05).
+- `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` y `PenalizadosController` (HU-05).
 - `AutenticacionService` CA-01 a 03; `CatalogoService` CA-04 a 06; `ReservaService` CA-08 a 13; `DevolucionService` CA-14 a 16.
 - `Reglas/`: clases pequeñas y deterministas, sin base de datos ni reloj propio (cruce de horarios, validación de fechas, política de bloqueo, política de penalización). Los servicios las orquestan con `AppDbContext` y `TimeProvider`.
 - Los errores de negocio se devuelven como resultados tipados (`ResultadoOperacion`), no como excepciones de control de flujo.
@@ -65,7 +65,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 - La hora se obtiene solo de un `TimeProvider` inyectado con zona America/Lima, nunca de `DateTime.Now`. `Inicio`, `Fin` y demás fechas son `DateTime` en hora de Lima.
 - Bloqueo: 3 fallos consecutivos bloquean 15 minutos (`Seguridad:MinutosBloqueo`). El contador se reinicia con un login exitoso y al vencer el bloqueo.
 - CA-10: un estudiante tiene como máximo 1 reserva Pendiente o Aprobada sin devolver.
-- Penalizado: solo se registra y se muestra; no impide reservar. Levantar la penalización y la pantalla 07 quedan fuera de alcance.
+- Penalizado: no puede reservar hasta que un encargado levante la penalización en `PenalizadosController`. La fecha y el motivo salen de su devolución tardía más reciente; no se registra quién la levanta.
 - El estado del equipo se calcula, no se guarda: `EstadoEquipo {Disponible, Prestado}` es Prestado si existe una reserva Aprobada sin devolver cuyo inicio ya pasó, incluidas las vencidas.
 - Solo se puede elegir un equipo Disponible ahora; la validación de cruces siempre consulta las reservas aprobadas.
 - Devolver exactamente a la hora de fin no penaliza; solo se penaliza si la hora actual es estrictamente posterior.

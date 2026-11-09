@@ -72,6 +72,14 @@ namespace LabTrack.Tests.Seguridad
         }
 
         [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
+        public void Penalizados_RolEsperado_EsEncargado()
+        {
+            Assert.Equal("ENCARGADO", Roles<PenalizadosController>());
+        }
+
+        [Fact]
         [Trait("HU", "HU-01")]
         [Trait("CA", "CA-01")]
         public void Controladores_AccionesPost_NoIgnoranAntiforgery()

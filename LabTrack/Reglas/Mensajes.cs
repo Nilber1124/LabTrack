@@ -18,6 +18,7 @@ namespace LabTrack.Reglas
         public const string ChoqueConAprobada = "Este equipo ya tiene una reserva aprobada en ese horario";
         public const string UnaReservaALaVez = "Solo puedes tener un equipo reservado a la vez";
         public const string SoloEstudiantes = "Solo los estudiantes pueden solicitar reservas";
+        public const string EstudiantePenalizado = "No puedes reservar equipos por ahora";
 
         // HU-04
         public const string ReservaNoEncontrada = "La reserva indicada no existe";
@@ -28,5 +29,7 @@ namespace LabTrack.Reglas
 
         // HU-05
         public const string SoloReservasAprobadas = "Solo se puede devolver una reserva aprobada";
+        public const string EstudianteNoEncontrado = "El estudiante indicado no existe";
+        public const string PenalizacionNoActiva = "El estudiante no tiene una penalización activa";
     }
 }

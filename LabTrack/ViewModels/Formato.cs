@@ -19,6 +19,9 @@ namespace LabTrack.ViewModels
 
         public static string FechaYHorario(DateTime inicio, DateTime fin) => $"{Fecha(inicio)} · {Horario(inicio, fin)}";
 
+        public static string FechaHora(DateTime fecha)
+            => fecha.ToString("dd/MM/yyyy · HH:mm", CultureInfo.InvariantCulture);
+
         public static string Duracion(TimeSpan duracion)
         {
             var minutos = (int)Math.Ceiling(Math.Abs(duracion.TotalMinutes));

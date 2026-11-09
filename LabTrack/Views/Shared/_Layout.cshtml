@@ -31,6 +31,7 @@
             {
                 <a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Solicitudes</a>
                 <a asp-controller="Devoluciones" asp-action="Index" aria-current="@Actual("Devoluciones")">Devoluciones</a>
+                <a asp-controller="Penalizados" asp-action="Index" aria-current="@Actual("Penalizados")">Penalizados</a>
             }
         </nav>
         @if (User.Identity?.IsAuthenticated == true)

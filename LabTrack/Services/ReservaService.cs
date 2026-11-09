@@ -27,7 +27,7 @@ namespace LabTrack.Services
 
         private DateTime Ahora => _tiempo.GetLocalNow().DateTime;
 
-        public async Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idEquipo, CancellationToken cancellationToken = default)
+        public async Task<CrearReservaViewModel?> ObtenerFormularioAsync(int idUsuario, int idEquipo, CancellationToken cancellationToken = default)
         {
             var ahora = Ahora;
             var enCurso = EstadoPrestamo.EnCurso(ahora);
@@ -47,6 +47,7 @@ namespace LabTrack.Services
             if (modelo is not null)
             {
                 modelo.FechaMinima = DateOnly.FromDateTime(ahora);
+                await CompletarPenalizacionAsync(modelo, idUsuario, cancellationToken);
             }
 
             return modelo;
@@ -74,11 +75,18 @@ namespace LabTrack.Services
                 return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.EquipoNoEncontrado);
             }
 
-            var esEstudiante = await _context.Usuarios.AsNoTracking()
-                .AnyAsync(u => u.IdUsuario == idUsuario && u.Rol.Nombre == NombresRol.Estudiante, cancellationToken);
-            if (!esEstudiante)
+            var estadoEstudiante = await _context.Usuarios.AsNoTracking()
+                .Where(u => u.IdUsuario == idUsuario && u.Rol.Nombre == NombresRol.Estudiante)
+                .Select(u => (EstadoUsuario?)u.Estado)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (estadoEstudiante is null)
             {
                 return ResultadoOperacion.Fallo(TipoResultado.Validacion, Mensajes.SoloEstudiantes);
+            }
+
+            if (estadoEstudiante == EstadoUsuario.Penalizado)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.EstudiantePenalizado);
             }
 
             var prestadoAhora = await _context.Reservas.AsNoTracking()
@@ -311,6 +319,29 @@ namespace LabTrack.Services
                     Inicio = r.Inicio,
                     Fin = r.Fin
                 });
+
+        private async Task CompletarPenalizacionAsync(
+            CrearReservaViewModel modelo, int idUsuario, CancellationToken cancellationToken)
+        {
+            modelo.EstudiantePenalizado = await _context.Usuarios.AsNoTracking()
+                .AnyAsync(u => u.IdUsuario == idUsuario && u.Estado == EstadoUsuario.Penalizado, cancellationToken);
+            if (!modelo.EstudiantePenalizado)
+            {
+                return;
+            }
+
+            var tardia = await _context.Reservas.AsNoTracking()
+                .Where(r => r.IdUsuario == idUsuario && r.Estado == EstadoReserva.Devuelta && r.FechaDevolucionReal > r.Fin)
+                .OrderByDescending(r => r.FechaDevolucionReal)
+                .Select(r => new { Equipo = r.Equipo.Nombre, r.Fin, Devolucion = r.FechaDevolucionReal!.Value })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (tardia is not null)
+            {
+                modelo.MotivoPenalizacion =
+                    $"Devolviste «{tardia.Equipo}» {Formato.Duracion(tardia.Devolucion - tardia.Fin)} después de la hora de fin ({tardia.Devolucion:dd/MM/yyyy}).";
+            }
+        }
 
         // Serializa las operaciones sobre un equipo hasta que termine la transacción actual.
         private Task<Equipo?> BloquearEquipoAsync(int idEquipo, CancellationToken cancellationToken)

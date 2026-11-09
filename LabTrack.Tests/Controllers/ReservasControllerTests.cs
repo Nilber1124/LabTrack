@@ -36,7 +36,7 @@ namespace LabTrack.Tests.Controllers
                 .Returns(resultado);
 
         private void ResponderFormulario(bool disponible = true)
-            => _servicio.ObtenerFormularioAsync(3, Arg.Any<CancellationToken>())
+            => _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>())
                 .Returns(new CrearReservaViewModel { IdEquipo = 3, NombreEquipo = "Laptop", EquipoDisponible = disponible });
 
         [Fact]
@@ -65,11 +65,34 @@ namespace LabTrack.Tests.Controllers
         }
 
         [Fact]
+        [Trait("HU", "HU-05")]
+        [Trait("CA", "CA-16")]
+        public async Task Crear_EstudiantePenalizado_MuestraElAvisoAunqueElEquipoEstePrestado()
+        {
+            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>())
+                .Returns(new CrearReservaViewModel { IdEquipo = 3, EstudiantePenalizado = true, EquipoDisponible = false });
+
+            var vista = Assert.IsType<ViewResult>(await _controlador.Crear(3));
+
+            Assert.True(Assert.IsType<CrearReservaViewModel>(vista.Model).EstudiantePenalizado);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-03")]
+        [Trait("CA", "CA-08")]
+        public async Task Crear_SinIdentidad_DevuelveForbid()
+        {
+            ContextoControlador.Configurar(_controlador);
+
+            Assert.IsType<ForbidResult>(await _controlador.Crear(3));
+        }
+
+        [Fact]
         [Trait("HU", "HU-03")]
         [Trait("CA", "CA-08")]
         public async Task Crear_EquipoInexistente_DevuelveNotFound()
         {
-            _servicio.ObtenerFormularioAsync(3, Arg.Any<CancellationToken>()).Returns((CrearReservaViewModel?)null);
+            _servicio.ObtenerFormularioAsync(IdEstudiante, 3, Arg.Any<CancellationToken>()).Returns((CrearReservaViewModel?)null);
 
             Assert.IsType<NotFoundResult>(await _controlador.Crear(3));
         }

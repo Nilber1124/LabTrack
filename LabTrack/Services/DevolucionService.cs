@@ -118,6 +118,83 @@ namespace LabTrack.Services
                 penalizar ? $"{reserva.Usuario.Nombre} quedó Penalizado por devolución tardía." : null);
         }
 
+        public async Task<PenalizadosViewModel> ListarPenalizadosAsync(
+            string? busqueda, int pagina, CancellationToken cancellationToken = default)
+        {
+            busqueda = string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim();
+
+            var penalizados = _context.Usuarios.AsNoTracking().Where(u => u.Estado == EstadoUsuario.Penalizado);
+            if (busqueda is not null)
+            {
+                penalizados = penalizados.Where(u => u.Nombre.Contains(busqueda) || u.Codigo.Contains(busqueda));
+            }
+
+            var total = await penalizados.CountAsync(cancellationToken);
+            pagina = PaginacionViewModel.Normalizar(pagina, total, TamanoPagina);
+
+            // La fecha y el motivo salen de la devolución tardía más reciente.
+            var filas = await penalizados
+                .Select(u => new
+                {
+                    u.IdUsuario,
+                    u.Nombre,
+                    u.Codigo,
+                    Tardia = u.Reservas
+                        .Where(r => r.Estado == EstadoReserva.Devuelta && r.FechaDevolucionReal > r.Fin)
+                        .OrderByDescending(r => r.FechaDevolucionReal)
+                        .Select(r => new { r.Equipo.CodigoInventario, r.Fin, r.FechaDevolucionReal })
+                        .FirstOrDefault()
+                })
+                .OrderByDescending(u => u.Tardia!.FechaDevolucionReal)
+                .ThenBy(u => u.Nombre)
+                .Skip((pagina - 1) * TamanoPagina)
+                .Take(TamanoPagina)
+                .ToListAsync(cancellationToken);
+
+            return new PenalizadosViewModel
+            {
+                Penalizados = filas.Select(f => new PenalizadoViewModel
+                {
+                    IdUsuario = f.IdUsuario,
+                    Nombre = f.Nombre,
+                    Codigo = f.Codigo,
+                    FechaPenalizacion = f.Tardia?.FechaDevolucionReal,
+                    Motivo = f.Tardia is null
+                        ? "Sin devolución tardía registrada"
+                        : $"Devolución tardía · {f.Tardia.CodigoInventario} · {Formato.Duracion(f.Tardia.FechaDevolucionReal!.Value - f.Tardia.Fin)}"
+                }).ToList(),
+                Busqueda = busqueda,
+                Paginacion = new PaginacionViewModel
+                {
+                    Pagina = pagina,
+                    Total = total,
+                    TamanoPagina = TamanoPagina,
+                    Etiqueta = "estudiantes",
+                    EtiquetaSingular = "estudiante",
+                    Parametros = new() { ["busqueda"] = busqueda }
+                }
+            };
+        }
+
+        public async Task<ResultadoOperacion> LevantarPenalizacionAsync(int idUsuario, CancellationToken cancellationToken = default)
+        {
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == idUsuario, cancellationToken);
+            if (usuario is null)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.EstudianteNoEncontrado);
+            }
+
+            if (usuario.Estado != EstadoUsuario.Penalizado)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.EstadoInvalido, Mensajes.PenalizacionNoActiva);
+            }
+
+            usuario.Estado = EstadoUsuario.Activo;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return ResultadoOperacion.Ok($"Penalización levantada. {usuario.Nombre} ya puede reservar equipos.");
+        }
+
         private static void DescribirSituacion(ReservaActivaViewModel reserva, DateTime ahora)
         {
             reserva.Vencida = PoliticaPenalizacion.DebePenalizar(reserva.Fin, ahora);

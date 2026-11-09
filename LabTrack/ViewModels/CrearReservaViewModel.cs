@@ -38,5 +38,11 @@ namespace LabTrack.ViewModels
 
         [BindNever]
         public DateOnly FechaMinima { get; set; }
+
+        [BindNever]
+        public bool EstudiantePenalizado { get; set; }
+
+        [BindNever]
+        public string? MotivoPenalizacion { get; set; }
     }
 }

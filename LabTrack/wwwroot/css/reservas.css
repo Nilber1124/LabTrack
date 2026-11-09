@@ -5,6 +5,7 @@
 .reserva-equipo-cabecera { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .reserva-horas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .reserva-comprobaciones { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--superficie); font-size: 14px; }
+.reserva-penalizado { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--tinta); }
 
 @media (max-width: 800px) {
     .reserva { grid-template-columns: minmax(0, 1fr); gap: 24px; }
