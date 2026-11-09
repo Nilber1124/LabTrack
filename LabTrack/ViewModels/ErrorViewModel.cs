@@ -1,4 +1,4 @@
-namespace LabTrack.Models
+namespace LabTrack.ViewModels
 {
     public class ErrorViewModel
     {

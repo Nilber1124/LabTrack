@@ -1,5 +1,3 @@
-using LabTrack.Services;
-using LabTrack.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using LabTrack.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +11,9 @@ builder.Services.AddControllersWithViews();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en la configuracion.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddScoped<ISolicitudesService, SolicitudesService>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 // El módulo de login debe emitir esta cookie con NameIdentifier y el rol Encargado.

@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>labtrack-3f6a1c52-6b1e-4c7d-9a54-2c9e8f1d7b10</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

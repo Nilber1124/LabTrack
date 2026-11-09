@@ -4,53 +4,37 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabTrack.Models
 {
-    [Table("reservas")]
     public class Reserva
     {
-        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int IdReserva { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un estudiante vÃ¡lido.")]
-        public long EstudianteId { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Selecciona un estudiante válido.")]
+        public int IdUsuario { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona un equipo vÃ¡lido.")]
-        public long EquipoId { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Selecciona un equipo válido.")]
+        public int IdEquipo { get; set; }
 
-        [Column(TypeName = "datetimeoffset")]
-        public DateTimeOffset Inicio { get; set; }
+        public DateTime Inicio { get; set; }
 
-        [Column(TypeName = "datetimeoffset")]
-        public DateTimeOffset Fin { get; set; }
+        public DateTime Fin { get; set; }
 
-        [EnumDataType(typeof(EstadoReserva), ErrorMessage = "El estado de la reserva no es vÃ¡lido.")]
+        [EnumDataType(typeof(EstadoReserva), ErrorMessage = "El estado de la reserva no es válido.")]
         public EstadoReserva Estado { get; set; } = EstadoReserva.Pendiente;
 
-        [StringLength(255, ErrorMessage = "El motivo de rechazo no puede exceder los 255 caracteres.")]
+        [StringLength(200, ErrorMessage = "El motivo de rechazo no puede exceder los 200 caracteres.")]
         public string? MotivoRechazo { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "El encargado no es vÃ¡lido.")]
-        public long? ResueltaPor { get; set; }
+        public DateTime? FechaDevolucionReal { get; set; }
 
-        // Los instantes DateTime se guardan en UTC.
-        [Column(TypeName = "datetime2")]
-        public DateTime? ResueltaEn { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime? DevueltaEn { get; set; }
-
-        [Column(TypeName = "datetime2")]
-        public DateTime CreadaEn { get; set; }
+        [Timestamp]
+        public byte[] Version { get; set; } = [];
 
         [ValidateNever]
-        public Usuario Estudiante { get; set; } = null!;
-
-        [ValidateNever]
-        public Usuario? EncargadoResolutor { get; set; }
+        public Usuario Usuario { get; set; } = null!;
 
         [ValidateNever]
         public Equipo Equipo { get; set; } = null!;
-
-        [ValidateNever]
-        public Penalizacion? Penalizacion { get; set; }
     }
 }
