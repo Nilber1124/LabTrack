@@ -1,0 +1,50 @@
+@model LabTrack.ViewModels.RechazarSolicitudViewModel
+@{
+    Layout = "_PanelLayout";
+    ViewData["Title"] = "Rechazar solicitud";
+    ViewData["EsVistaPrevia"] = Model.EsVistaPrevia;
+    var controlador = Model.EsVistaPrevia ? "VistaPrevia" : "Solicitudes";
+    var accionListado = Model.EsVistaPrevia ? "Solicitudes" : "Index";
+}
+<div class="breadcrumb">Encargado <span>/</span> <a asp-controller="@controlador" asp-action="@accionListado">Solicitudes</a> <span>/</span> Rechazo</div>
+<div class="page-heading"><div><h1>Rechazar solicitud</h1><p>Indica al estudiante por qué no se puede atender su reserva.</p></div></div>
+@if (Model.EsVistaPrevia)
+{
+    <div class="notice notice-preview" role="status"><strong>Demostración · Datos ficticios</strong><p>El rechazo solo se guardará en esta sesión.</p></div>
+}
+<dialog class="solicitud-dialog standalone-rejection" data-auto-open data-return-url="@Url.Action(accionListado, controlador)" aria-label="Rechazar solicitud">
+<div class="decision-card">
+    @if (Model.Solicitud is { } solicitud)
+    {
+        <div class="request-summary">
+            <span class="eyebrow">Solicitud pendiente</span>
+            <h2>@solicitud.Estudiante</h2>
+            <p>@solicitud.CodigoEstudiante</p>
+            <dl>
+                <dt>Equipo</dt><dd>@solicitud.Equipo <small>@solicitud.CodigoInventario</small></dd>
+                <dt>Inicio</dt><dd>@solicitud.Inicio.ToString("dd/MM/yyyy · HH:mm zzz")</dd>
+                <dt>Fin</dt><dd>@solicitud.Fin.ToString("dd/MM/yyyy · HH:mm zzz")</dd>
+            </dl>
+        </div>
+    }
+    <form asp-controller="@controlador" asp-action="Rechazar" method="post" class="decision-form">
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
+        <label asp-for="Motivo"></label>
+        <textarea asp-for="Motivo" rows="4" maxlength="255" required
+                  placeholder="Ejemplo: equipo en mantenimiento." aria-describedby="motivo-ayuda motivo-error"></textarea>
+        <div id="motivo-ayuda" class="field-help">Obligatorio · Máximo 255 caracteres.</div>
+        <span id="motivo-error" asp-validation-for="Motivo" class="field-error"></span>
+        <div class="notice notice-warning"><p>La reserva pasará a Rechazada y el equipo no se asignará a esta solicitud.</p></div>
+        <div class="decision-actions">
+            <a asp-controller="@controlador" asp-action="@accionListado" class="button button-secondary">Cancelar</a>
+            <button type="submit" class="button button-danger-solid">Confirmar rechazo</button>
+        </div>
+    </form>
+</div>
+</dialog>
+<noscript><style>.standalone-rejection { display:block; position:static; }</style></noscript>
+@section Scripts {
+    <script src="~/js/solicitudes.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

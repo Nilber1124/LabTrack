@@ -1,0 +1,192 @@
+@model LabTrack.ViewModels.SolicitudesListadoViewModel
+@{
+    Layout = "_PanelLayout";
+    ViewData["Title"] = "Solicitudes";
+    ViewData["EsVistaPrevia"] = Model.EsVistaPrevia;
+    var controladorListado = Model.EsVistaPrevia ? "VistaPrevia" : "Solicitudes";
+    var accionListado = Model.EsVistaPrevia ? "Solicitudes" : "Index";
+}
+<div class="breadcrumb">Encargado <span>/</span> Laboratorio</div>
+<header class="page-heading">
+    <div><h1>Solicitudes</h1><p>Revisa las reservas pendientes y gestiona el préstamo de equipos.</p></div>
+    <span class="counter"><span aria-hidden="true">●</span> @Model.Total pendientes@(string.IsNullOrEmpty(Model.Busqueda) ? "" : " encontradas")</span>
+</header>
+
+@{
+    var exito = TempData["Exito"] as string;
+    var error = TempData["Error"] as string;
+    var mensaje = error ?? exito;
+    var tituloResultado = TempData["TituloResultado"] as string ?? (error is null ? "Operación completada" : "No se pudo completar");
+}
+@if (mensaje is not null)
+{
+    <dialog id="resultado-solicitud" class="solicitud-dialog feedback-dialog" data-auto-open aria-labelledby="resultado-titulo">
+        <div class="notice @(error is null ? "notice-success" : "notice-warning")">
+            <span class="feedback-icon" aria-hidden="true">@(error is null ? "✓" : "!")</span>
+            <div><h2 id="resultado-titulo">@tituloResultado</h2><p>@mensaje</p></div>
+        </div>
+        <div class="modal-actions"><button type="button" class="button button-primary" data-close-dialog autofocus>Entendido</button></div>
+    </dialog>
+    <noscript><div class="notice @(error is null ? "notice-success" : "notice-warning")" role="status">@mensaje</div></noscript>
+}
+
+@if (Model.EsVistaPrevia)
+{
+    <div class="notice notice-preview" role="status">
+        <strong>Vista previa · Datos ficticios</strong>
+        <p>Puedes aprobar y rechazar estos ejemplos. Los cambios solo se guardan en tu sesión y no afectan reservas reales.</p>
+    </div>
+}
+
+<div class="panel-columns">
+    <section aria-label="Listado de solicitudes">
+        <form asp-controller="@controladorListado" asp-action="@accionListado" method="get" class="search-form">
+            <label for="busqueda">Buscar solicitud pendiente</label>
+            <div class="search-controls">
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda" type="search" maxlength="120"
+                       placeholder="Estudiante, código o equipo" />
+                <button class="button button-primary" type="submit">Buscar</button>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Busqueda))
+            {
+                <a class="clear-search" asp-controller="@controladorListado" asp-action="@accionListado">Limpiar búsqueda</a>
+            }
+        </form>
+        @if (Model.Solicitudes.Count == 0)
+        {
+            <div class="empty-state" role="status">
+                <span class="empty-icon" aria-hidden="true">✓</span>
+                <h2>@(string.IsNullOrEmpty(Model.Busqueda) ? "No hay solicitudes pendientes" : "No encontramos solicitudes")</h2>
+                <p>@(string.IsNullOrEmpty(Model.Busqueda) ? "No hay reservas pendientes por revisar." : "Prueba con otro nombre, código de estudiante o equipo.")</p>
+                @if (!string.IsNullOrEmpty(Model.Busqueda))
+                {
+                    <a class="button button-secondary" asp-controller="@controladorListado" asp-action="@accionListado">Ver todas las solicitudes</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="requests-table">
+                    <caption>Reservas pendientes · Horas con su desfase UTC</caption>
+                    <thead><tr>
+                        <th scope="col">Estudiante</th><th scope="col">Equipo</th>
+                        <th scope="col">Fecha / hora solicitada</th><th scope="col">Acciones</th>
+                    </tr></thead>
+                    <tbody>
+                    @foreach (var solicitud in Model.Solicitudes)
+                    {
+                        <tr data-solicitud-id="@solicitud.Id" data-estudiante="@solicitud.Estudiante"
+                            data-equipo="@solicitud.Equipo" data-inventario="@solicitud.CodigoInventario"
+                            data-inicio="@solicitud.Inicio.ToString("dd/MM/yyyy HH:mm zzz")"
+                            data-fin="@solicitud.Fin.ToString("dd/MM/yyyy HH:mm zzz")">
+                            <td data-label="Estudiante"><strong>@solicitud.Estudiante</strong><small>@solicitud.CodigoEstudiante</small></td>
+                            <td data-label="Equipo"><strong>@solicitud.Equipo</strong><small>@solicitud.CodigoInventario</small>
+                                @if (solicitud.EquipoPrestado)
+                                {
+                                    <span class="status status-warning">Prestado en este horario</span>
+                                }
+                            </td>
+                            <td data-label="Fecha / hora">
+                                <time datetime="@solicitud.Inicio.ToString("O")">@solicitud.Inicio.ToString("dd/MM/yyyy · HH:mm")</time>
+                                <small>Hasta @solicitud.Fin.ToString("dd/MM/yyyy · HH:mm") · UTC @solicitud.Inicio.ToString("zzz")</small>
+                            </td>
+                            <td data-label="Acciones">
+                                <div class="actions">
+                                    <form asp-controller="@controladorListado" asp-action="Aprobar" method="post" class="js-aprobar">
+                                        <input type="hidden" name="id" value="@solicitud.Id" />
+                                        <button type="submit" class="button button-primary"
+                                                aria-label="Aprobar solicitud de @solicitud.Estudiante para @solicitud.Equipo">Aprobar</button>
+                                    </form>
+                                    <a asp-controller="@controladorListado" asp-action="Rechazar" asp-route-id="@solicitud.Id" class="button button-danger js-rechazar"
+                                       aria-label="Rechazar solicitud de @solicitud.Estudiante para @solicitud.Equipo">Rechazar</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <nav class="pagination" aria-label="Paginación de solicitudes">
+                <span>Página @Model.Pagina de @Model.TotalPaginas</span>
+                <div>
+                @if (Model.Pagina > 1)
+                {
+                    <a class="button button-secondary" asp-controller="@controladorListado" asp-action="@accionListado" asp-route-pagina="@(Model.Pagina - 1)" asp-route-busqueda="@Model.Busqueda">Anterior</a>
+                }
+                @if (Model.Pagina < Model.TotalPaginas)
+                {
+                    <a class="button button-secondary" asp-controller="@controladorListado" asp-action="@accionListado" asp-route-pagina="@(Model.Pagina + 1)" asp-route-busqueda="@Model.Busqueda">Siguiente</a>
+                }
+                </div>
+            </nav>
+        }
+    </section>
+    <aside class="help-panel">
+        <span class="eyebrow">Gestión de solicitudes</span>
+        <h2>Antes de resolver</h2>
+        <div class="help-item"><span class="step">01</span><div><h3>Revisa el horario</h3><p>Comprueba el equipo y el bloque de tiempo solicitado por el estudiante.</p></div></div>
+        <div class="help-item"><span class="step">02</span><div><h3>Aprueba la reserva</h3><p>El equipo quedará prestado para ese bloque. No se permiten reservas aprobadas superpuestas.</p></div></div>
+        <div class="help-item"><span class="step">03</span><div><h3>Justifica el rechazo</h3><p>Si no puedes atender la solicitud, escribe un motivo breve y claro.</p></div></div>
+        <div class="help-note">Las decisiones se guardan con el encargado responsable y la fecha de resolución.</div>
+    </aside>
+</div>
+
+@if (Model.EsVistaPrevia)
+{
+    <section class="demo-history" aria-label="Resultados de la demostración">
+        <h2>Decisiones de esta sesión</h2>
+        @foreach (var resultado in Model.ResolucionesSimuladas)
+        {
+            <div class="notice @(resultado.Estado == EstadoReserva.Aprobada ? "notice-success" : "notice-warning")">
+                <strong>@resultado.Solicitud.Estudiante · @resultado.Estado</strong>
+                <p>@resultado.Solicitud.Equipo · @resultado.Solicitud.Inicio.ToString("dd/MM/yyyy HH:mm") — @resultado.Solicitud.Fin.ToString("HH:mm")</p>
+                @if (resultado.Estado == EstadoReserva.Aprobada) { <p>Equipo prestado para ese bloque.</p> }
+                else { <p>Motivo: @resultado.Motivo</p> }
+            </div>
+        }
+        <form asp-controller="VistaPrevia" asp-action="Reiniciar" method="post">
+            <button type="submit" class="button button-secondary">Reiniciar ejemplos</button>
+        </form>
+    </section>
+}
+
+<dialog id="confirmar-aprobacion" class="solicitud-dialog" aria-labelledby="aprobar-titulo">
+    <div class="modal-body">
+        <h2 id="aprobar-titulo">¿Aprobar esta reserva?</h2>
+        <p data-modal-estudiante></p>
+        <p class="modal-schedule" data-modal-horario></p>
+        <div class="transition-note">
+            <p>Al aprobar: <span class="status status-pending">Pendiente</span> → <span class="status status-approved">Aprobada</span></p>
+            <p>El equipo figurará como <span class="status status-loaned">Prestado</span> para este bloque de tiempo.</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="button button-secondary" data-close-dialog autofocus>Cancelar</button>
+            <button id="confirmar-aprobar" type="button" class="button button-primary">Sí, aprobar</button>
+        </div>
+        <p class="submit-progress" role="status" aria-live="polite"></p>
+    </div>
+</dialog>
+
+<dialog id="confirmar-rechazo" class="solicitud-dialog" aria-labelledby="rechazar-titulo">
+    <form asp-controller="@controladorListado" asp-action="Rechazar" method="post" class="modal-body js-confirmar-rechazo">
+        <h2 id="rechazar-titulo">Rechazar solicitud</h2>
+        <p data-modal-estudiante></p>
+        <p class="modal-schedule" data-modal-horario></p>
+        <input type="hidden" name="Id" id="rechazo-id" />
+        <label for="rechazo-motivo">Motivo del rechazo (obligatorio)</label>
+        <textarea id="rechazo-motivo" name="Motivo" required maxlength="255" rows="4"
+                  aria-describedby="rechazo-ayuda rechazo-error" placeholder="Ejemplo: equipo en mantenimiento."></textarea>
+        <p id="rechazo-ayuda" class="field-help">Máximo 255 caracteres.</p>
+        <p id="rechazo-error" class="field-error" role="alert"></p>
+        <div class="modal-actions">
+            <button type="button" class="button button-secondary" data-close-dialog>Cancelar</button>
+            <button type="submit" class="button button-danger-solid">Confirmar rechazo</button>
+        </div>
+        <p class="field-help">La reserva pasará a Rechazada y se guardará el motivo.</p>
+        <p class="submit-progress" role="status" aria-live="polite"></p>
+    </form>
+</dialog>
+@section Scripts {
+    <script src="~/js/solicitudes.js" asp-append-version="true"></script>
+}
