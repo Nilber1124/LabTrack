@@ -1,241 +1,101 @@
-# AGENTS.md — Guía de desarrollo de LabTrack
+# AGENTS.md — LabTrack
 
-## Alcance y propósito
+LabTrack gestiona el préstamo de equipos de laboratorio (curso Calidad y Pruebas de Software). Cada criterio de aceptación debe demostrarse con una prueba unitaria, salvo CA-07 (JMeter).
 
-Estas reglas se aplican a todo el repositorio. Su objetivo es mantener una estructura uniforme y una base sencilla para desarrollar la gestión de usuarios, categorías, equipos, reservas y penalizaciones.
+Fuentes de verdad, en orden: historias de usuario, mockups, este archivo. Si chocan o falta algo, preguntar; no inventar campos, estados ni reglas. Si un mockup contradice una HU, gana la HU. La estructura descrita es el destino: comprobar el estado real antes de cada tarea.
 
-Respetar el alcance de cada solicitud. No implementar módulos, pantallas, migraciones ni cambios de base de datos que no formen parte del trabajo pedido. Conservar los cambios existentes del usuario. Distinguir requisitos confirmados de propuestas; no convertir suposiciones en reglas de negocio.
+## Stack y estructura
 
-## Tecnología y decisiones vigentes
+.NET 10, ASP.NET Core MVC con Razor, EF Core 10 (SQL Server, Code-First), autenticación por cookie y sesión (TempData). Pruebas con xUnit.
 
-- ASP.NET Core MVC, C# y .NET 10.
-- Entity Framework Core 10 y SQL Server.
-- Vistas Razor y recursos estáticos en wwwroot.
-- Contexto único: LabTrack.Data.ApplicationDbContext.
-- Cadena de conexión: ConnectionStrings:DefaultConnection.
-- Registrar el contexto en Program.cs mediante AddDbContext y UseSqlServer.
-- Mantener los paquetes de EF Core en versiones compatibles entre sí; revisar vulnerabilidades y usar versiones corregidas compatibles.
-- PostgreSQL fue una propuesta inicial. No introducir Npgsql, timestamptz ni exclusiones de rangos de PostgreSQL.
-- Trabajar en develop para el trabajo actual. No cambiar de rama, publicar ni crear commits salvo que la tarea lo requiera.
+```
+LabTrack/        Controllers  Data/AppDbContext.cs  Migrations  Models  ViewModels
+                 Reglas  Services (interfaces + implementaciones)  ViewComponents
+                 Views/<Controlador>  Views/Shared  wwwroot/css  wwwroot/js
+LabTrack.Tests/  xUnit, solo unitarias; espeja las carpetas del proyecto web
+tests/performance/   plan JMeter (solo CA-07)
+docs/            plan-de-pruebas.md  matriz-trazabilidad.md
+.github/workflows/   CI
+```
 
-## Estado al crear esta guía
+Paquetes permitidos: EF Core (SqlServer), xUnit, NSubstitute, Microsoft.Extensions.TimeProvider.Testing y coverlet. Cualquier otro se justifica antes.
 
-ApplicationDbContext, su registro en Program.cs y las cinco entidades con sus enums están implementados para SQL Server. Los modelos siguen el estilo de BOSS: DataAnnotations para el mapeo simple y la validación; Fluent API en el contexto para relaciones, índices, conversiones, valores predeterminados y restricciones SQL. Antes de generar o aplicar migraciones, comprobar el estado real de Migrations y de la base de datos.
+## Comandos
 
-La estructura descrita a continuación es el destino del proyecto, no una afirmación de que todos los módulos estén implementados. Antes de empezar una tarea, verificar el estado real de los archivos.
+```bash
+dotnet build LabTrack.slnx
+dotnet test LabTrack.Tests/LabTrack.Tests.csproj
+dotnet test LabTrack.Tests/LabTrack.Tests.csproj /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line /p:Include="[LabTrack]LabTrack.Reglas.*%2c[LabTrack]LabTrack.Services.*"
+dotnet ef migrations add NombreDescriptivo --project LabTrack/LabTrack.csproj --context AppDbContext --output-dir Migrations
+jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resultado.jtl -e -o tests/performance/resultados/reporte
+```
 
-## Estructura del repositorio
+Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
-    LabTrack/
-    ├── AGENTS.md
-    ├── LabTrack.slnx
-    ├── NuGet.Config
-    └── LabTrack/
-        ├── Controllers/
-        ├── Models/
-        ├── ViewModels/
-        ├── Services/
-        │   └── Interfaces/
-        ├── Data/
-        │   ├── ApplicationDbContext.cs
-        │   └── Configurations/         # Opcional cuando crezca el mapeo
-        ├── Migrations/                # Generada por Entity Framework
-        ├── Views/
-        │   ├── Shared/
-        │   └── <Controlador>/
-        ├── wwwroot/
-        │   ├── css/
-        │   ├── js/
-        │   └── images/
-        ├── Properties/
-        ├── Program.cs
-        ├── appsettings.json
-        └── appsettings.Development.json
+## Reglas de datos
 
-Crear carpetas al necesitarlas, no archivos vacíos para simular funcionalidades. Si se agregan pruebas, ubicarlas en un proyecto LabTrack.Tests junto a la solución.
+- Un único `AppDbContext`, un `DbSet<T>` por entidad; el nombre del DbSet es el de la tabla (plural, sin `ToTable`). Sin modelos sin `DbSet`.
+- Claves `Id<Entidad>` (int, identidad). Navegaciones en PascalCase.
+- `Rol` (ESTUDIANTE, ENCARGADO); `Usuario` (Codigo único, Nombre, hash de contraseña, IdRol, Estado, IntentosFallidos, BloqueadoHasta); `Categoria` (Cómputo, Electrónica, Redes); `Equipo` (Nombre, CodigoInventario único, IdCategoria, Version); `Reserva` (IdUsuario, IdEquipo, Inicio, Fin, Estado, MotivoRechazo de 200, FechaDevolucionReal, Version).
+- Enums como texto: `EstadoReserva {Pendiente, Aprobada, Rechazada, Devuelta}`, `EstadoUsuario {Activo, Penalizado}`.
+- Relaciones y `OnDelete` explícitos en `OnModelCreating`: `Restrict` hacia equipos y usuarios con historial; `SetNull` en referencias opcionales.
+- Índices: únicos en `Usuario.Codigo` y `Equipo.CodigoInventario`; compuesto `Reserva (IdEquipo, Inicio, Fin)`; `Equipo.IdCategoria`; único filtrado de `Reserva.IdUsuario` para estados Pendiente y Aprobada (CA-10).
+- `HasData` solo para `Rol` y `Categoria`. Usuarios de demostración con `DbSeeder` en Development, con hash real y datos de configuración.
+- Modelos con Data Annotations y mensajes en español; `[ValidateNever]` en navegaciones.
+- Cada cambio de modelo genera una migración descriptiva. El arranque ejecuta `Database.Migrate()`.
 
-## Responsabilidades por capa
+## Capas
 
-### Models
+- Controladores delgados que dependen de interfaces inyectadas: `IAutenticacionService`, `ICatalogoService`, `IReservaService`, `IDevolucionService`. Sin capa de repositorios: los servicios usan `AppDbContext`.
+- `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` (HU-05).
+- `AutenticacionService` CA-01 a 03; `CatalogoService` CA-04 a 06; `ReservaService` CA-08 a 13; `DevolucionService` CA-14 a 16.
+- `Reglas/`: clases pequeñas y deterministas, sin base de datos ni reloj propio (cruce de horarios, validación de fechas, política de bloqueo, política de penalización). Los servicios las orquestan con `AppDbContext` y `TimeProvider`.
+- Los errores de negocio se devuelven como resultados tipados (`ResultadoOperacion`), no como excepciones de control de flujo.
+- ViewModels en `ViewModels/`; no se envían entidades EF a vistas con lógica. Reciben Fecha + HoraInicio + HoraFin y el servicio compone `Inicio` y `Fin`.
+- Post/Redirect/Get con `TempData["Success"]` y `TempData["Error"]` en los POST correctos. Errores de validación o de negocio en un formulario: volver a mostrarlo con el error.
+- Lecturas con `AsNoTracking()` y proyección a ViewModel; filtros y agregaciones en la base de datos.
+- `ViewComponent` para widgets compartidos del layout.
+- Los mensajes exigidos ("Credenciales inválidas", "No hay equipos disponibles en esta categoría") son constantes en un solo lugar y se reutilizan en las pruebas.
 
-- Representar entidades persistentes, claves, relaciones y enums del dominio.
-- Una entidad por archivo; nombres singulares: Usuario, Categoria, Equipo, Reserva y Penalizacion.
-- Seguir el estilo de BOSS: [Key] y [DatabaseGenerated] para claves; [Required], [StringLength], [Range] y [EnumDataType] donde corresponda, con mensajes en español; [Table] y [Column] para mapeos simples.
-- Marcar navegaciones con [ValidateNever] para excluirlas de la validación MVC; esto no sustituye los ViewModels ni autoriza modificaciones de campos sensibles.
-- No acceder a la base de datos ni incluir lógica HTTP o presentación.
-- Inicializar colecciones de navegación. Usar nullable solo para datos realmente opcionales.
-- No persistir el estado Disponible/Prestado de un equipo: se calcula desde las reservas.
-- Mantener PasswordHash; nunca una propiedad para guardar contraseñas en texto plano.
+## Decisiones de diseño
 
-### ViewModels
+- Cruce: `a.Inicio < b.Fin && b.Inicio < a.Fin`. Horarios contiguos no se cruzan. Se exige `Fin > Inicio` e inicio no pasado. Solo las reservas Aprobada bloquean horario.
+- La hora se obtiene solo de un `TimeProvider` inyectado con zona America/Lima, nunca de `DateTime.Now`. `Inicio`, `Fin` y demás fechas son `DateTime` en hora de Lima.
+- Bloqueo: 3 fallos consecutivos bloquean 15 minutos (`Seguridad:MinutosBloqueo`). El contador se reinicia con un login exitoso y al vencer el bloqueo.
+- CA-10: un estudiante tiene como máximo 1 reserva Pendiente o Aprobada sin devolver.
+- Penalizado: solo se registra y se muestra; no impide reservar. Levantar la penalización y la pantalla 07 quedan fuera de alcance.
+- El estado del equipo se calcula, no se guarda: `EstadoEquipo {Disponible, Prestado}` es Prestado si existe una reserva Aprobada sin devolver cuyo inicio ya pasó, incluidas las vencidas.
+- Solo se puede elegir un equipo Disponible ahora; la validación de cruces siempre consulta las reservas aprobadas.
+- Devolver exactamente a la hora de fin no penaliza; solo se penaliza si la hora actual es estrictamente posterior.
+- Concurrencia: crear y aprobar revalidan dentro de una transacción que bloquea la fila del equipo con `UPDLOCK, HOLDLOCK`. `Reserva` y `Equipo` tienen token `rowversion` (`Version`). Los conflictos devuelven un resultado controlado.
+- Aprobar es una sola operación atómica.
+- Del mockup se implementa lo que sostiene un CA y lo que es solo presentación; se omite lo que exige datos o reglas nuevas.
 
-- Definir los datos de entrada y salida de cada pantalla.
-- Separar formularios de creación, edición y listados cuando tengan campos diferentes.
-- Usar nombres como CrearReservaViewModel y EquipoListadoViewModel.
-- Declarar validaciones de entrada con DataAnnotations y mensajes en español.
-- No recibir entidades completas desde formularios para modificar campos sensibles.
-- No exponer hashes, intentos de acceso u otros datos internos en las vistas.
-- ErrorViewModel existe actualmente en Models; moverlo solo si la tarea incluye esa reorganización.
+## Seguridad
 
-### Controllers
+- `PasswordHasher<Usuario>`; nunca texto plano. Mismo mensaje para código inexistente y contraseña errónea.
+- Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO")]` en solicitudes y devoluciones.
+- `AutoValidateAntiforgeryTokenAttribute` y `ResponseCache(NoStore = true)` como filtros globales. Cookie `HttpOnly` con expiración deslizante.
+- `UseDeveloperExceptionPage` solo en Development; página de error genérica en producción.
+- Cadena de conexión y credenciales semilla fuera del repositorio: User Secrets en local, variables de entorno en Azure.
+- El usuario que ejecuta una operación se obtiene de los claims, nunca del formulario.
 
-- Recibir dependencias por constructor.
-- Coordinar la entrada, ModelState, el servicio y el resultado HTTP o la vista.
-- Mantener las reglas de negocio fuera del controlador.
-- Permitir consultas sencillas al contexto para lecturas; usar servicios para operaciones de negocio.
-- Usar acciones GET para consultar y POST para modificar desde formularios MVC.
-- Proteger acciones de modificación con ValidateAntiForgeryToken.
-- Usar ViewModels tipados; evitar ViewBag para datos esenciales.
-- Devolver errores adecuados y mensajes útiles sin revelar detalles internos.
+## Convenciones
 
-### Services
+- Código, comentarios y mensajes de usuario en español. Namespace raíz `LabTrack`; un archivo por clase.
+- Cambios pequeños y revisables; no mezclar refactor y funcionalidad nueva en un paso.
+- Ramas `feature/<modulo>` desde `develop`; commits en español.
 
-- Implementar los casos de uso y las reglas de reservas, devoluciones y penalizaciones.
-- Definir interfaces cuando faciliten la separación del controlador y las pruebas.
-- Inyectar ApplicationDbContext; registrar los servicios que lo utilizan con alcance Scoped.
-- Coordinar transacciones y tratar conflictos de concurrencia.
-- No depender de vistas, TempData, HttpContext ni respuestas HTTP.
-- No agregar repositorios genéricos ni capas adicionales sin una necesidad concreta.
+## Pruebas (solo unitarias)
 
-### Data y Migrations
-
-- ApplicationDbContext declara propiedades DbSet<T> con get/set y configura las relaciones mediante Fluent API, con cadenas separadas y comentarios por relación como en BOSS.
-- Usar DataAnnotations en las entidades para tablas, claves autoincrementales, campos requeridos, longitudes y tipos simples. Usar Fluent API para relaciones, índices únicos, conversiones de enums, valores predeterminados y restricciones SQL. No duplicar la misma configuración en ambos lugares.
-- No duplicar configuraciones contradictorias en atributos y Fluent API.
-- Cuando el mapeo crezca, extraer clases IEntityTypeConfiguration<T> a Data/Configurations y registrarlas desde el contexto.
-- No usar el contexto como un servicio de negocio ni construirlo con new en los controladores.
-- No agregar otro DbContext vacío o con nombre ambiguo.
-- Mantener el contexto Scoped; no compartir una instancia entre hilos ni ejecutar operaciones paralelas sobre ella.
-- No cambiar el esquema automáticamente al iniciar la aplicación.
-
-### Views y wwwroot
-
-- Vistas Razor tipadas, organizadas por controlador; elementos comunes en Views/Shared.
-- Usar Tag Helpers y los archivos compartidos de validación.
-- Mantener las validaciones del servidor aunque exista validación del navegador.
-- Separar CSS y JavaScript por funcionalidad cuando sea necesario.
-- No consultar EF Core ni implementar reglas de negocio en Razor o JavaScript.
-- Mantener la codificación de salida de Razor; evitar Html.Raw con contenido del usuario.
-
-## Convenciones de C#
-
-- Usar cuatro espacios, UTF-8 y formato consistente con el código existente.
-- PascalCase para clases, propiedades y métodos; camelCase para parámetros y variables; _camelCase para campos privados.
-- Nombres del dominio en español, sin tildes en identificadores. Mantener nombres de APIs del framework.
-- Namespaces correspondientes a carpetas, por ejemplo LabTrack.Services.
-- Usar namespaces con llaves y clases con propiedades explícitas, como en BOSS. Evitar reformateos ajenos a la tarea.
-- Mantener nullable habilitado; no ocultar advertencias mediante desactivación global.
-- Usar null! solo cuando exista una garantía documentable, como una navegación requerida que materializa EF.
-- Métodos de acceso a datos asíncronos con sufijo Async y CancellationToken cuando corresponda.
-- Usar await; no bloquear con .Result o .Wait().
-- Preferir métodos pequeños y nombres claros. Comentar decisiones y motivos, no repetir lo evidente.
-- Evitar catch vacíos, excepciones silenciadas y valores mágicos. Registrar errores con ILogger<T>.
-- No usar async void salvo eventos que lo requieran.
-
-## Contrato del modelo de datos
-
-Mantener estos nombres y tipos salvo un cambio explícito de requisitos:
-
-| Entidad / tabla | Clave | Campos y restricciones principales |
-| --- | --- | --- |
-| Usuario / usuarios | Id: long, IDENTITY | Codigo: 20, único; Nombre: 120; PasswordHash: 255; los tres requeridos |
-| Categoria / categorias | Id: short, IDENTITY | Nombre: 50, requerido y único |
-| Equipo / equipos | Id: long, IDENTITY | CodigoInventario: 30, único; Nombre: 120; ambos requeridos; CategoriaId: short |
-| Reserva / reservas | Id: long, IDENTITY | EstudianteId y EquipoId: long; Inicio y Fin: DateTimeOffset; MotivoRechazo: string? de 255; ResueltaPor: long? |
-| Penalizacion / penalizaciones | Id: long, IDENTITY | ReservaId: long, requerido y único; CreadaEn: DateTime; LevantadaEn: DateTime? |
-
-- RolUsuario: Estudiante y Encargado; predeterminado Estudiante.
-- EstadoUsuario: Activo y Penalizado; predeterminado Activo.
-- EstadoReserva: Pendiente, Aprobada, Rechazada y Devuelta; predeterminado Pendiente.
-- Persistir los enums como texto y restringir sus valores válidos.
-- IntentosFallidos es short, no negativo y predeterminado 0.
-- BloqueadoHasta es DateTimeOffset? y se mapea a datetimeoffset.
-- Inicio y Fin se mapean a datetimeoffset; Fin debe ser posterior a Inicio.
-- ResueltaEn y DevueltaEn son DateTime?; CreadaEn es DateTime.
-- Los DateTime de auditoría se guardan en UTC como datetime2; usar SYSUTCDATETIME() para las fechas de creación generadas por SQL Server.
-- datetime2 no conserva zona horaria ni DateTime.Kind: interpretar esas fechas como UTC al materializarlas y convertirlas para presentación.
-- LevantadaEn se mapea expresamente a la columna Levantada_En.
-- Usar índices en claves foráneas e índices adicionales justificados por consultas reales.
-
-### Relaciones y navegaciones
-
-- Categoria.Equipos ↔ Equipo.Categoria, FK CategoriaId.
-- Usuario.ReservasComoEstudiante ↔ Reserva.Estudiante, FK EstudianteId.
-- Usuario.ReservasResueltas ↔ Reserva.EncargadoResolutor, FK opcional ResueltaPor.
-- Equipo.Reservas ↔ Reserva.Equipo, FK EquipoId.
-- Reserva.Penalizacion ↔ Penalizacion.Reserva, FK única ReservaId.
-- Configurar explícitamente ambas relaciones entre Usuario y Reserva.
-- Mantener borrado restringido para preservar el historial; no activar cascadas sin analizar su efecto.
-
-## Reglas de negocio y concurrencia
-
-- Comprobar en el servicio que EstudianteId pertenece a un estudiante y que quien resuelve tiene rol Encargado. Una FK por sí sola no valida roles.
-- No aceptar del formulario el usuario que ejecuta una operación; obtenerlo de la identidad autenticada.
-- Autorizar tanto el rol como el acceso al recurso. Ocultar un botón no constituye autorización.
-- Definir y validar las transiciones de reserva antes de implementarlas. No inventar duraciones de bloqueo, plazos de préstamo o políticas de penalización.
-- La restricción Fin > Inicio no impide reservas superpuestas.
-- Para intervalos [Inicio, Fin), hay solapamiento cuando existente.Inicio < nuevo.Fin y nuevo.Inicio < existente.Fin.
-- Confirmar qué estados bloquean disponibilidad antes de implementar esa política.
-- SQL Server no proporciona las exclusiones de rangos de PostgreSQL: al implementar la aprobación, proteger la comprobación y escritura con una estrategia transaccional que impida carreras entre solicitudes.
-- Una consulta AnyAsync seguida de SaveChangesAsync sin protección de concurrencia no basta.
-- Hacer atómicas las operaciones que deban persistirse juntas, como devolución y penalización.
-- Tratar los conflictos con mensajes controlados; respaldar las reglas con restricciones e índices siempre que sea posible.
-
-## Consultas y persistencia
-
-- Usar AsNoTracking en lecturas que no se modificarán y Select para proyectar solo los datos necesarios.
-- Evitar consultas N+1, cargas completas para filtrar en memoria y listados sin límites.
-- Paginar los listados que puedan crecer.
-- No concatenar entrada del usuario en SQL; usar LINQ o parámetros.
-- Aplicar cambios a entidades cargadas y a campos permitidos; evitar Update indiscriminado de entidades recibidas.
-- No duplicar SaveChangesAsync por cada propiedad ni persistir operaciones relacionadas parcialmente.
-
-## Seguridad y configuración
-
-- Usar PasswordHasher<Usuario> o una solución estándar equivalente para crear y verificar hashes.
-- No crear usuarios con contraseñas fijas en migraciones o semillas.
-- No registrar contraseñas, hashes ni cadenas con credenciales.
-- Guardar secretos en User Secrets o variables de entorno; no agregarlos al repositorio.
-- DefaultConnection puede sobrescribirse con ConnectionStrings__DefaultConnection.
-- Integrated Security usa la identidad del proceso; verificar permisos al ejecutar o desplegar.
-- TrustServerCertificate=True corresponde al entorno local actual; para producción configurar certificado válido.
-- Revisar vulnerabilidades NuGet, incluidas dependencias transitivas, sin actualizar paquetes ajenos indiscriminadamente.
-- Al implementar autenticación por cookies, registrar autenticación y colocar UseAuthentication antes de UseAuthorization.
-- No afirmar que la autenticación ya existe por el solo hecho de tener una entidad Usuario.
-
-## Flujo de migraciones
-
-1. Completar entidades y mapeos; comprobar que el proyecto compile.
-2. Revisar migraciones existentes y el snapshot antes de generar una nueva.
-3. Generar con EF Core; usar la carpeta Migrations para nuevas migraciones.
-4. Revisar Up, Down, índices, tipos y cualquier posible pérdida de datos.
-5. Aplicar a la base de datos solo cuando esté dentro del alcance solicitado.
-6. Entregar conjuntamente el modelo, la migración y el snapshot cuando la tarea incluya un cambio de esquema.
-
-Consola del Administrador de paquetes de Visual Studio, con LabTrack como proyecto predeterminado y proyecto de inicio:
-
-    Add-Migration NombreDescriptivo -Context ApplicationDbContext -OutputDir Migrations
-    Update-Database -Context ApplicationDbContext
-
-Equivalente desde la raíz del repositorio:
-
-    dotnet ef migrations add NombreDescriptivo --project LabTrack/LabTrack.csproj --context ApplicationDbContext --output-dir Migrations
-    dotnet ef database update --project LabTrack/LabTrack.csproj --context ApplicationDbContext
-
-- No regenerar una migración inicial si ya existe una válida.
-- No eliminar ni reescribir migraciones aplicadas o compartidas; crear una nueva.
-- No editar manualmente el snapshot para simular cambios.
-- No mezclar EnsureCreated con un flujo basado en migraciones.
-- Generar una migración no necesita conexión; aplicarla sí.
-- Si faltan modelos o acceso al servidor, informar la limitación con precisión.
-
-## Validación y entrega
-
-- Revisar los cambios existentes antes de editar y limitar el diff a la tarea.
-- Ejecutar dotnet build sobre LabTrack/LabTrack.csproj para cambios de código cuando sea posible.
-- Agregar pruebas para reglas de negocio, autorización y concurrencia al implementar esas funcionalidades.
-- Probar restricciones, transacciones y migraciones con SQL Server; EF InMemory no demuestra su comportamiento.
-- Cubrir especialmente reservas simultáneas, fechas inválidas, acceso a recursos ajenos y doble penalización.
-- Los cambios documentales no requieren compilar ni generar migraciones.
-- Informar qué se cambió, qué se verificó y qué falta; no afirmar que un comando pasó si no se ejecutó o falló.
-- Mantener esta guía actualizada cuando cambien las decisiones arquitectónicas; conservar el historial en Git.
+- **No avanzar de HU con pruebas en rojo:** al terminar cada HU ejecutar `dotnet build` y `dotnet test`.
+- Una unidad aislada: sin servidor web, HTTP, `WebApplicationFactory`, red ni archivos; la única excepción es el SQL Server de las pruebas de servicios. Arrange-Act-Assert, un comportamiento por prueba, independientes y deterministas. Reloj siempre con `FakeTimeProvider`.
+- Nombre `Metodo_Condicion_ResultadoEsperado`, con `[Trait("HU","HU-0X")]` y `[Trait("CA","CA-XX")]`.
+- Reglas: directas, sin dobles; aquí van los valores límite.
+- Servicios: `AppDbContext` sobre SQL Server real (nunca InMemory ni SQLite), en una base temporal `LabTrack_Pruebas_<GUID>` creada con las migraciones, limpiada antes de cada prueba y eliminada al terminar. Nunca sobre la base `LabTrack`.
+- Controladores: servicios con NSubstitute, `DefaultHttpContext`, sesión y `TempData` falsos; se verifica el `IActionResult`. No se renderizan vistas.
+- Modelos y ViewModels: `Validator.TryValidateObject`, casos válidos e inválidos.
+- Mapeo: sobre `context.Model`, sin consultas.
+- Seguridad: por reflexión, `[Authorize]` y roles de cada controlador; `LoginController` es el único anónimo.
+- Las vistas se verifican a mano con la lista de `docs/plan-de-pruebas.md`.
+- Meta: los 15 CA verificables con al menos una prueba y 80 % de líneas en `Reglas/` y `Services/`.

@@ -18,7 +18,6 @@ namespace LabTrack.ViewModels
         public int Pagina { get; set; }
         public int Total { get; set; }
         public int TamanoPagina { get; set; }
-        public IReadOnlyList<SolicitudSimuladaViewModel> ResolucionesSimuladas { get; set; } = [];
         public bool EsVistaPrevia { get; set; }
         public string Busqueda { get; set; } = string.Empty;
         public int TotalPaginas => Math.Max(1, (int)Math.Ceiling(Total / (double)TamanoPagina));

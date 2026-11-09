@@ -4,8 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- El proyecto anidado tiene su propia solución y no forma parte de esta aplicación. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);LabTrack/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

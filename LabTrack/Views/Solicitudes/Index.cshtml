@@ -132,24 +132,6 @@
     </aside>
 </div>
 
-@if (Model.EsVistaPrevia)
-{
-    <section class="demo-history" aria-label="Resultados de la demostración">
-        <h2>Decisiones de esta sesión</h2>
-        @foreach (var resultado in Model.ResolucionesSimuladas)
-        {
-            <div class="notice @(resultado.Estado == EstadoReserva.Aprobada ? "notice-success" : "notice-warning")">
-                <strong>@resultado.Solicitud.Estudiante · @resultado.Estado</strong>
-                <p>@resultado.Solicitud.Equipo · @resultado.Solicitud.Inicio.ToString("dd/MM/yyyy HH:mm") — @resultado.Solicitud.Fin.ToString("HH:mm")</p>
-                @if (resultado.Estado == EstadoReserva.Aprobada) { <p>Equipo prestado para ese bloque.</p> }
-                else { <p>Motivo: @resultado.Motivo</p> }
-            </div>
-        }
-        <form asp-controller="VistaPrevia" asp-action="Reiniciar" method="post">
-            <button type="submit" class="button button-secondary">Reiniciar ejemplos</button>
-        </form>
-    </section>
-}
 
 <dialog id="confirmar-aprobacion" class="solicitud-dialog" aria-labelledby="aprobar-titulo">
     <div class="modal-body">

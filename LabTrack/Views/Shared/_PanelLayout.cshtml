@@ -11,7 +11,7 @@
 </head>
 <body>
     <header class="panel-header">
-        <a class="brand" asp-controller="Home" asp-action="Index"><span class="brand-square" aria-hidden="true"></span>LabTrack</a>
+        <a class="brand" asp-controller="Solicitudes" asp-action="Index"><span class="brand-square" aria-hidden="true"></span>LabTrack</a>
         <nav aria-label="Navegación principal">
             <a class="nav-current" asp-controller="@(esVistaPrevia ? "VistaPrevia" : "Solicitudes")" asp-action="@(esVistaPrevia ? "Solicitudes" : "Index")" aria-current="page">Solicitudes</a>
         </nav>

@@ -36,7 +36,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 
-builder.Services.AddScoped<VistaPreviaSolicitudesService>();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
