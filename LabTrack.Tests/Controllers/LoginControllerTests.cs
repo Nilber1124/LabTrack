@@ -99,7 +99,8 @@ namespace LabTrack.Tests.Controllers
 
             await _controlador.Index(Formulario(), default);
 
-            Assert.Equal("7", principal!.FindFirstValue(ClaimTypes.NameIdentifier));
+            Assert.NotNull(principal);
+            Assert.Equal("7", principal.FindFirstValue(ClaimTypes.NameIdentifier));
             Assert.Equal(NombresRol.Estudiante, principal.FindFirstValue(ClaimTypes.Role));
         }
 
