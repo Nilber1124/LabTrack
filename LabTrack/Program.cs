@@ -1,3 +1,6 @@
+using LabTrack.Services;
+using LabTrack.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using LabTrack.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +16,36 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+builder.Services.AddScoped<ISolicitudesService, SolicitudesService>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+// El módulo de login debe emitir esta cookie con NameIdentifier y el rol Encargado.
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.AddScoped<VistaPreviaSolicitudesService>();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".LabTrack.Demo";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,6 +55,8 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseRouting();
 
+app.UseSession();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -33,3 +68,6 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+// Punto de entrada accesible para las pruebas de integración.
+public partial class Program { }
