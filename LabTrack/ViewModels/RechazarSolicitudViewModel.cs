@@ -3,17 +3,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LabTrack.ViewModels
 {
-    public sealed class RechazarSolicitudViewModel
+    public class RechazarSolicitudViewModel
     {
-        [BindNever]
-        public bool EsVistaPrevia { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Selecciona una solicitud válida")]
+        public int IdReserva { get; set; }
 
-        [Range(1, long.MaxValue)]
-        public long Id { get; set; }
-
-        [Required(ErrorMessage = "Escribe el motivo del rechazo.")]
-        [StringLength(255, ErrorMessage = "El motivo debe tener como máximo 255 caracteres.")]
-        [Display(Name = "Motivo del rechazo")]
+        [Required(ErrorMessage = "Escribe el motivo del rechazo")]
+        [StringLength(200, ErrorMessage = "El motivo no puede exceder los 200 caracteres")]
+        [Display(Name = "Motivo del rechazo (obligatorio)")]
         public string Motivo { get; set; } = string.Empty;
 
         [BindNever]

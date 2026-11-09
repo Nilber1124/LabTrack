@@ -11,6 +11,8 @@ namespace LabTrack.Services
     public sealed class ReservaService : IReservaService
     {
         private const int TamanoPaginaPropias = 10;
+        private const int TamanoPaginaSolicitudes = 20;
+        private const int LongitudMaximaMotivo = 200;
         private const int ErrorClaveDuplicada = 2601;
         private const int ErrorRestriccionUnica = 2627;
 
@@ -177,6 +179,136 @@ namespace LabTrack.Services
                 }
             };
         }
+
+        public async Task<SolicitudesViewModel> ListarPendientesAsync(int pagina, CancellationToken cancellationToken = default)
+        {
+            var pendientes = Pendientes();
+            var total = await pendientes.CountAsync(cancellationToken);
+            pagina = PaginacionViewModel.Normalizar(pagina, total, TamanoPaginaSolicitudes);
+
+            var solicitudes = await pendientes
+                .OrderBy(s => s.Inicio)
+                .ThenBy(s => s.IdReserva)
+                .Skip((pagina - 1) * TamanoPaginaSolicitudes)
+                .Take(TamanoPaginaSolicitudes)
+                .ToListAsync(cancellationToken);
+
+            return new SolicitudesViewModel
+            {
+                Solicitudes = solicitudes,
+                Paginacion = new PaginacionViewModel
+                {
+                    Pagina = pagina,
+                    Total = total,
+                    TamanoPagina = TamanoPaginaSolicitudes,
+                    Etiqueta = "solicitudes"
+                }
+            };
+        }
+
+        public Task<SolicitudPendienteViewModel?> ObtenerPendienteAsync(int idReserva, CancellationToken cancellationToken = default)
+            => Pendientes().FirstOrDefaultAsync(s => s.IdReserva == idReserva, cancellationToken);
+
+        public async Task<ResultadoOperacion> AprobarAsync(int idReserva, CancellationToken cancellationToken = default)
+        {
+            var idEquipo = await _context.Reservas.AsNoTracking()
+                .Where(r => r.IdReserva == idReserva)
+                .Select(r => (int?)r.IdEquipo)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (idEquipo is null)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.ReservaNoEncontrada);
+            }
+
+            await using var transaccion = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // Con el equipo bloqueado, una aprobación simultánea espera y después ve esta reserva.
+            var equipo = await BloquearEquipoAsync(idEquipo.Value, cancellationToken);
+            var reserva = await _context.Reservas.FirstOrDefaultAsync(r => r.IdReserva == idReserva, cancellationToken);
+            if (equipo is null || reserva is null)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.ReservaNoEncontrada);
+            }
+
+            if (reserva.Estado != EstadoReserva.Pendiente)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.EstadoInvalido, Mensajes.SolicitudYaResuelta);
+            }
+
+            if (await ExisteCruceConAprobadaAsync(reserva.IdEquipo, reserva.Inicio, reserva.Fin, reserva.IdReserva, cancellationToken))
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ChoqueConAprobada);
+            }
+
+            reserva.Estado = EstadoReserva.Aprobada;
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ConflictoConcurrencia);
+            }
+
+            await transaccion.CommitAsync(cancellationToken);
+
+            return ResultadoOperacion.Ok(
+                $"Reserva aprobada. {equipo.CodigoInventario} figura como Prestado el {Formato.FechaYHorario(reserva.Inicio, reserva.Fin)}.");
+        }
+
+        public async Task<ResultadoOperacion> RechazarAsync(int idReserva, string? motivo, CancellationToken cancellationToken = default)
+        {
+            motivo = motivo?.Trim();
+            if (string.IsNullOrEmpty(motivo))
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Validacion, Mensajes.MotivoObligatorio);
+            }
+
+            if (motivo.Length > LongitudMaximaMotivo)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Validacion, Mensajes.MotivoExcedeLongitud);
+            }
+
+            var reserva = await _context.Reservas.FirstOrDefaultAsync(r => r.IdReserva == idReserva, cancellationToken);
+            if (reserva is null)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.NoEncontrado, Mensajes.ReservaNoEncontrada);
+            }
+
+            if (reserva.Estado != EstadoReserva.Pendiente)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.EstadoInvalido, Mensajes.SolicitudYaResuelta);
+            }
+
+            reserva.Estado = EstadoReserva.Rechazada;
+            reserva.MotivoRechazo = motivo;
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Conflicto, Mensajes.ConflictoConcurrencia);
+            }
+
+            return ResultadoOperacion.Ok("Solicitud rechazada. El estudiante verá el motivo en Mis reservas.");
+        }
+
+        private IQueryable<SolicitudPendienteViewModel> Pendientes()
+            => _context.Reservas.AsNoTracking()
+                .Where(r => r.Estado == EstadoReserva.Pendiente)
+                .Select(r => new SolicitudPendienteViewModel
+                {
+                    IdReserva = r.IdReserva,
+                    Estudiante = r.Usuario.Nombre,
+                    CodigoEstudiante = r.Usuario.Codigo,
+                    Equipo = r.Equipo.Nombre,
+                    CodigoInventario = r.Equipo.CodigoInventario,
+                    Inicio = r.Inicio,
+                    Fin = r.Fin
+                });
 
         // Serializa las operaciones sobre un equipo hasta que termine la transacción actual.
         private Task<Equipo?> BloquearEquipoAsync(int idEquipo, CancellationToken cancellationToken)
