@@ -1,0 +1,76 @@
+@model CrearReservaViewModel
+@{
+    ViewData["Title"] = "Reservar equipo";
+    var horaInicio = Model.HoraInicio ?? new TimeOnly(10, 0);
+    var horaFin = Model.HoraFin ?? new TimeOnly(12, 0);
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/reservas.css" asp-append-version="true" />
+}
+<div class="ayuda"><a asp-controller="Catalogo" asp-action="Index">Catálogo</a> / @Model.NombreEquipo</div>
+<h1>Reservar equipo</h1>
+
+<div class="reserva">
+    <aside class="reserva-equipo">
+        <div class="reserva-equipo-cabecera">
+            <span class="filtros-titulo">@Model.Categoria</span>
+            <partial name="_Badge" model="@(Model.EquipoDisponible ? "disponible" : "prestado")" />
+        </div>
+        <h3>@Model.NombreEquipo</h3>
+        <span class="codigo">Inv. @Model.CodigoInventario</span>
+    </aside>
+
+    <form asp-action="Crear" method="post" id="form-reserva" class="formulario">
+        <h4>Datos de la reserva</h4>
+        <input asp-for="IdEquipo" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly" class="alerta alerta-error validacion-resumen" role="alert"></div>
+
+        <div class="campo">
+            <label asp-for="Fecha"></label>
+            <input asp-for="Fecha" asp-format="{0:yyyy-MM-dd}" type="date" class="entrada" min="@Model.FechaMinima.ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="Fecha" class="error-campo"></span>
+        </div>
+
+        <div class="reserva-horas">
+            <div class="campo">
+                <label for="HoraInicio">Hora de inicio</label>
+                <select id="HoraInicio" name="HoraInicio" class="entrada">
+                    @foreach (var hora in CrearReservaViewModel.Horas)
+                    {
+                        <option value="@hora.ToString("HH:mm")" selected="@(hora == horaInicio)">@hora.ToString("HH:mm")</option>
+                    }
+                </select>
+                <span asp-validation-for="HoraInicio" class="error-campo"></span>
+            </div>
+            <div class="campo">
+                <label for="HoraFin">Hora de fin</label>
+                <select id="HoraFin" name="HoraFin" class="entrada">
+                    @foreach (var hora in CrearReservaViewModel.Horas)
+                    {
+                        <option value="@hora.ToString("HH:mm")" selected="@(hora == horaFin)">@hora.ToString("HH:mm")</option>
+                    }
+                </select>
+                <span asp-validation-for="HoraFin" class="error-campo"></span>
+            </div>
+        </div>
+
+        <div class="error-campo" id="error-horas" role="alert" hidden>La hora de fin debe ser posterior a la de inicio</div>
+
+        <div class="reserva-comprobaciones">
+            <b>Al enviar comprobamos</b>
+            <span>Que no choque con una reserva aprobada de este equipo.</span>
+            <span>Que no tengas otra reserva activa.</span>
+            <span>La solicitud queda <b>Pendiente</b> hasta que el encargado la apruebe.</span>
+        </div>
+
+        <div class="acciones">
+            <button type="submit" class="btn btn-primario" id="boton-enviar">Enviar solicitud</button>
+            <a class="btn btn-secundario" asp-controller="Catalogo" asp-action="Index">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/reservas.js" asp-append-version="true"></script>
+}

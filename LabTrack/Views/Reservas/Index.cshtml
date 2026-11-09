@@ -1,0 +1,67 @@
+@model MisReservasViewModel
+@{
+    ViewData["Title"] = "Mis reservas";
+}
+<div class="encabezado">
+    <div>
+        <h1>Mis reservas</h1>
+        <span class="ayuda">@Model.TotalGeneral reservas · @Model.TotalPendientes pendiente de aprobación</span>
+    </div>
+    <a class="btn btn-secundario" asp-controller="Catalogo" asp-action="Index">Ir al catálogo<span aria-hidden="true">→</span></a>
+</div>
+
+@if (Model.EstudiantePenalizado)
+{
+    <div class="alerta alerta-aviso" role="status">
+        <strong>Tienes una penalización registrada</strong>
+        Se aplicó por una devolución posterior a la hora de fin.
+    </div>
+}
+
+<div class="filtros">
+    <span class="filtros-titulo">Estado</span>
+    <div class="segmentos">
+        <a asp-action="Index" aria-current="@(Model.EstadoSeleccionado is null ? "true" : null)">Todas · @Model.TotalGeneral</a>
+        @foreach (var filtro in Model.Estados)
+        {
+            <a asp-action="Index" asp-route-estado="@filtro.Estado" aria-current="@(Model.EstadoSeleccionado == filtro.Estado ? "true" : null)">@filtro.Estado · @filtro.Total</a>
+        }
+    </div>
+</div>
+
+@if (Model.Reservas.Count == 0)
+{
+    <div class="vacio" role="status">
+        @if (Model.EstadoSeleccionado is null)
+        {
+            <b>Aún no tienes reservas</b>
+            <span class="ayuda">Cuando solicites un equipo, verás aquí su estado.</span>
+            <a class="btn btn-primario" asp-controller="Catalogo" asp-action="Index">Ir al catálogo</a>
+        }
+        else
+        {
+            <b>No tienes reservas en este estado</b>
+        }
+    </div>
+}
+else
+{
+    <table class="tabla">
+        <thead>
+            <tr><th scope="col">Equipo</th><th scope="col">Fecha</th><th scope="col">Horario</th><th scope="col">Estado</th><th scope="col">Motivo</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var reserva in Model.Reservas)
+            {
+                <tr>
+                    <td data-etiqueta="Equipo"><b>@reserva.Equipo</b><small>@reserva.CodigoInventario</small></td>
+                    <td data-etiqueta="Fecha">@Formato.Fecha(reserva.Inicio)</td>
+                    <td data-etiqueta="Horario">@Formato.Horario(reserva.Inicio, reserva.Fin)</td>
+                    <td data-etiqueta="Estado"><partial name="_Badge" model="@reserva.Estado.ToString().ToLowerInvariant()" /></td>
+                    <td data-etiqueta="Motivo">@(reserva.MotivoRechazo ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <partial name="_Paginacion" model="Model.Paginacion" />
+}
