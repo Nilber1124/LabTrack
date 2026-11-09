@@ -1,0 +1,6 @@
+/* Catálogo de equipos (mockup 02). */
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+.tarjeta { display: flex; flex-direction: column; gap: 8px; padding: 16px; min-height: 180px; background: var(--superficie); border-top: 2px solid var(--tinta); }
+.tarjeta-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tarjeta-nombre { font-size: 17px; line-height: 1.2; letter-spacing: -.01em; margin: 0; }
+.tarjeta-accion { margin-top: auto; width: 100%; justify-content: space-between; }

@@ -27,6 +27,7 @@ builder.Services.Configure<SeguridadOpciones>(builder.Configuration.GetSection(S
 builder.Services.AddSingleton<TimeProvider>(new ZonaLimaTimeProvider());
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAutenticacionService, AutenticacionService>();
+builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(opciones =>

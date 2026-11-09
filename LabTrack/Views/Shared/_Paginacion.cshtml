@@ -1,0 +1,33 @@
+@model PaginacionViewModel
+@{
+    Dictionary<string, string?> Ruta(int pagina) => new(Model.Parametros) { ["pagina"] = pagina.ToString() };
+    var desde = Math.Max(1, Model.Pagina - 2);
+    var hasta = Math.Min(Model.TotalPaginas, Model.Pagina + 2);
+}
+<div class="paginacion">
+    <span>Mostrando @Model.Desde–@Model.Hasta de @Model.Total @Model.Etiqueta</span>
+    @if (Model.TotalPaginas > 1)
+    {
+        <nav aria-label="Paginación">
+            @if (Model.Pagina > 1)
+            {
+                <a asp-action="Index" asp-all-route-data="@Ruta(Model.Pagina - 1)" aria-label="Página anterior">‹</a>
+            }
+            @for (var i = desde; i <= hasta; i++)
+            {
+                if (i == Model.Pagina)
+                {
+                    <span class="pagina" aria-current="page">@i</span>
+                }
+                else
+                {
+                    <a asp-action="Index" asp-all-route-data="@Ruta(i)">@i</a>
+                }
+            }
+            @if (Model.Pagina < Model.TotalPaginas)
+            {
+                <a asp-action="Index" asp-all-route-data="@Ruta(Model.Pagina + 1)" aria-label="Página siguiente">›</a>
+            }
+        </nav>
+    }
+</div>
