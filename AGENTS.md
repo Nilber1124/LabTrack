@@ -20,7 +20,7 @@ Respetar el alcance de cada solicitud. No implementar módulos, pantallas, migra
 
 ## Estado al crear esta guía
 
-ApplicationDbContext y su registro en Program.cs están preparados. Las entidades y enums que utiliza el contexto siguen pendientes; Usuario existe como clase vacía. Esto impide compilar y generar migraciones hasta completar los modelos.
+ApplicationDbContext, su registro en Program.cs y las cinco entidades con sus enums están implementados para SQL Server. Los modelos siguen el estilo de BOSS: DataAnnotations para el mapeo simple y la validación; Fluent API en el contexto para relaciones, índices, conversiones, valores predeterminados y restricciones SQL. Antes de generar o aplicar migraciones, comprobar el estado real de Migrations y de la base de datos.
 
 La estructura descrita a continuación es el destino del proyecto, no una afirmación de que todos los módulos estén implementados. Antes de empezar una tarea, verificar el estado real de los archivos.
 
@@ -60,6 +60,8 @@ Crear carpetas al necesitarlas, no archivos vacíos para simular funcionalidades
 
 - Representar entidades persistentes, claves, relaciones y enums del dominio.
 - Una entidad por archivo; nombres singulares: Usuario, Categoria, Equipo, Reserva y Penalizacion.
+- Seguir el estilo de BOSS: [Key] y [DatabaseGenerated] para claves; [Required], [StringLength], [Range] y [EnumDataType] donde corresponda, con mensajes en español; [Table] y [Column] para mapeos simples.
+- Marcar navegaciones con [ValidateNever] para excluirlas de la validación MVC; esto no sustituye los ViewModels ni autoriza modificaciones de campos sensibles.
 - No acceder a la base de datos ni incluir lógica HTTP o presentación.
 - Inicializar colecciones de navegación. Usar nullable solo para datos realmente opcionales.
 - No persistir el estado Disponible/Prestado de un equipo: se calcula desde las reservas.
@@ -97,8 +99,8 @@ Crear carpetas al necesitarlas, no archivos vacíos para simular funcionalidades
 
 ### Data y Migrations
 
-- ApplicationDbContext declara DbSet y configura el modelo mediante Fluent API.
-- Usar Fluent API como fuente de verdad para tablas, tipos, longitudes, claves, relaciones, índices y valores predeterminados.
+- ApplicationDbContext declara propiedades DbSet<T> con get/set y configura las relaciones mediante Fluent API, con cadenas separadas y comentarios por relación como en BOSS.
+- Usar DataAnnotations en las entidades para tablas, claves autoincrementales, campos requeridos, longitudes y tipos simples. Usar Fluent API para relaciones, índices únicos, conversiones de enums, valores predeterminados y restricciones SQL. No duplicar la misma configuración en ambos lugares.
 - No duplicar configuraciones contradictorias en atributos y Fluent API.
 - Cuando el mapeo crezca, extraer clases IEntityTypeConfiguration<T> a Data/Configurations y registrarlas desde el contexto.
 - No usar el contexto como un servicio de negocio ni construirlo con new en los controladores.
@@ -121,7 +123,7 @@ Crear carpetas al necesitarlas, no archivos vacíos para simular funcionalidades
 - PascalCase para clases, propiedades y métodos; camelCase para parámetros y variables; _camelCase para campos privados.
 - Nombres del dominio en español, sin tildes en identificadores. Mantener nombres de APIs del framework.
 - Namespaces correspondientes a carpetas, por ejemplo LabTrack.Services.
-- Usar namespaces de archivo en archivos nuevos y evitar reformateos ajenos a la tarea.
+- Usar namespaces con llaves y clases con propiedades explícitas, como en BOSS. Evitar reformateos ajenos a la tarea.
 - Mantener nullable habilitado; no ocultar advertencias mediante desactivación global.
 - Usar null! solo cuando exista una garantía documentable, como una navegación requerida que materializa EF.
 - Métodos de acceso a datos asíncronos con sufijo Async y CancellationToken cuando corresponda.
