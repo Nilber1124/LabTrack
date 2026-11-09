@@ -77,6 +77,7 @@ namespace LabTrack.Services
                     Total = total,
                     TamanoPagina = TamanoPagina,
                     Etiqueta = "equipos",
+                    EtiquetaSingular = "equipo",
                     Parametros = new() { ["categoria"] = categoria }
                 }
             };

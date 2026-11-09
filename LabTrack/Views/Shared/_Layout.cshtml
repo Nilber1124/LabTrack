@@ -3,7 +3,9 @@
     var controlador = ViewContext.RouteData.Values["controller"] as string;
     var esEncargado = User.IsInRole(NombresRol.Encargado);
     var esEstudiante = User.IsInRole(NombresRol.Estudiante);
-    string? Actual(string nombre) => controlador == nombre ? "page" : null;
+    // Reservar un equipo forma parte del recorrido del catálogo.
+    var seccion = ViewContext.RouteData.Values["action"] as string == "Crear" ? "Catalogo" : controlador;
+    string? Actual(string nombre) => seccion == nombre ? "page" : null;
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -18,7 +20,7 @@
 </head>
 <body>
     <header class="barra">
-        <span class="marca"><span class="marca-cuadro" aria-hidden="true"></span>LabTrack</span>
+        <span class="marca"><img class="marca-logo" src="~/images/logo.png" alt="" />LabTrack</span>
         <nav class="barra-nav" aria-label="Navegación principal">
             @if (esEstudiante)
             {

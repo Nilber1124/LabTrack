@@ -12,6 +12,7 @@
 
 <div class="reserva">
     <aside class="reserva-equipo">
+        <partial name="_FotoEquipo" />
         <div class="reserva-equipo-cabecera">
             <span class="filtros-titulo">@Model.Categoria</span>
             <partial name="_Badge" model="@(Model.EquipoDisponible ? "disponible" : "prestado")" />

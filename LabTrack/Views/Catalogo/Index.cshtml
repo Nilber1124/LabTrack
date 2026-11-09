@@ -9,7 +9,7 @@
 <div class="encabezado">
     <div>
         <h1>Catálogo de equipos</h1>
-        <span class="ayuda">@Model.Paginacion.Total equipos · @Model.TotalDisponibles disponibles ahora</span>
+        <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta · @Model.TotalDisponibles @(Model.TotalDisponibles == 1 ? "disponible" : "disponibles") ahora</span>
     </div>
 </div>
 
@@ -39,6 +39,8 @@ else
         {
             var disponible = equipo.Estado == EstadoEquipo.Disponible;
             <article class="tarjeta">
+                <partial name="_FotoEquipo" />
+                <div class="tarjeta-cuerpo">
                 <div class="tarjeta-cabecera">
                     <span class="filtros-titulo">@equipo.Categoria</span>
                     <partial name="_Badge" model="@(disponible ? "disponible" : "prestado")" />
@@ -53,6 +55,7 @@ else
                 {
                     <button type="button" class="btn btn-secundario tarjeta-accion" disabled>No disponible · hasta @Formato.Hora(equipo.PrestadoHasta!.Value)</button>
                 }
+                </div>
             </article>
         }
     </div>

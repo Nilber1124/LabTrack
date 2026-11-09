@@ -71,6 +71,7 @@ using (var alcance = app.Services.CreateScope())
             contexto,
             app.Configuration,
             alcance.ServiceProvider.GetRequiredService<IPasswordHasher<Usuario>>(),
+            alcance.ServiceProvider.GetRequiredService<TimeProvider>(),
             app.Logger);
     }
 }

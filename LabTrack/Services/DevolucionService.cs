@@ -70,6 +70,7 @@ namespace LabTrack.Services
                     Total = total,
                     TamanoPagina = TamanoPagina,
                     Etiqueta = "reservas activas",
+                    EtiquetaSingular = "reserva activa",
                     Parametros = new() { ["busqueda"] = busqueda }
                 }
             };

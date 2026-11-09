@@ -32,7 +32,7 @@ jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resu
 
 Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
-`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}` y `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}`.
+`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}`, `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}` y `Semilla:ContrasenaDemostracion` (estudiantes de simulación).
 
 ## Reglas de datos
 
@@ -42,7 +42,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 - Enums como texto: `EstadoReserva {Pendiente, Aprobada, Rechazada, Devuelta}`, `EstadoUsuario {Activo, Penalizado}`.
 - Relaciones y `OnDelete` explícitos en `OnModelCreating`: `Restrict` hacia equipos y usuarios con historial; `SetNull` en referencias opcionales.
 - Índices: únicos en `Usuario.Codigo` y `Equipo.CodigoInventario`; compuesto `Reserva (IdEquipo, Inicio, Fin)`; `Equipo.IdCategoria`; único filtrado de `Reserva.IdUsuario` para estados Pendiente y Aprobada (CA-10).
-- `HasData` solo para `Rol` y `Categoria`. Usuarios de demostración con `DbSeeder` en Development, con hash real y datos de configuración.
+- `HasData` solo para `Rol` y `Categoria`. Datos de demostración con `DbSeeder` en Development, idempotente, con hash real y contraseñas de configuración.
 - Modelos con Data Annotations y mensajes en español; `[ValidateNever]` en navegaciones.
 - Cada cambio de modelo genera una migración descriptiva. El arranque ejecuta `Database.Migrate()`.
 

@@ -5,13 +5,21 @@
     var hasta = Math.Min(Model.TotalPaginas, Model.Pagina + 2);
 }
 <div class="paginacion">
-    <span>Mostrando @Model.Desde–@Model.Hasta de @Model.Total @Model.Etiqueta</span>
+    <span>Mostrando @Model.Desde–@Model.Hasta de @Model.Total @Model.TextoEtiqueta</span>
     @if (Model.TotalPaginas > 1)
     {
         <nav aria-label="Paginación">
             @if (Model.Pagina > 1)
             {
                 <a asp-action="Index" asp-all-route-data="@Ruta(Model.Pagina - 1)" aria-label="Página anterior">‹</a>
+            }
+            @if (desde > 1)
+            {
+                <a asp-action="Index" asp-all-route-data="@Ruta(1)">1</a>
+            }
+            @if (desde > 2)
+            {
+                <span aria-hidden="true">…</span>
             }
             @for (var i = desde; i <= hasta; i++)
             {
@@ -23,6 +31,14 @@
                 {
                     <a asp-action="Index" asp-all-route-data="@Ruta(i)">@i</a>
                 }
+            }
+            @if (hasta < Model.TotalPaginas - 1)
+            {
+                <span aria-hidden="true">…</span>
+            }
+            @if (hasta < Model.TotalPaginas)
+            {
+                <a asp-action="Index" asp-all-route-data="@Ruta(Model.TotalPaginas)">@Model.TotalPaginas</a>
             }
             @if (Model.Pagina < Model.TotalPaginas)
             {

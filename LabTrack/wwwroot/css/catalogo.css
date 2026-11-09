@@ -1,6 +1,17 @@
-/* Catálogo de equipos (mockup 02). */
-.tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
-.tarjeta { display: flex; flex-direction: column; gap: 8px; padding: 16px; min-height: 180px; background: var(--superficie); border-top: 2px solid var(--tinta); }
+/* Catálogo de equipos: columnas pares para que las 8 tarjetas de cada página llenen las filas. */
+.tarjetas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.tarjeta { display: flex; flex-direction: column; background: var(--superficie); border-top: 2px solid var(--tinta); }
+.tarjeta-cuerpo { display: flex; flex-direction: column; flex: 1; gap: 8px; padding: 16px; }
 .tarjeta-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tarjeta-nombre { font-size: 17px; line-height: 1.2; letter-spacing: -.01em; margin: 0; }
 .tarjeta-accion { margin-top: auto; width: 100%; justify-content: space-between; }
+.tarjeta .codigo { margin-bottom: 8px; }
+
+@media (max-width: 1100px) {
+    .tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+    .tarjetas { grid-template-columns: minmax(0, 1fr); }
+    .foto-equipo { height: 96px; }
+}

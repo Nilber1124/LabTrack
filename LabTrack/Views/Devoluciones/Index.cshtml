@@ -5,7 +5,7 @@
 <div class="encabezado">
     <div>
         <h1>Devoluciones</h1>
-        <span class="ayuda">@Model.Paginacion.Total reservas activas · @Model.TotalVencidas vencidas · ahora: @Formato.Fecha(Model.Ahora), @Formato.Hora(Model.Ahora)</span>
+        <span class="ayuda">@Model.Paginacion.Total @Model.Paginacion.TextoEtiqueta · @Model.TotalVencidas @(Model.TotalVencidas == 1 ? "vencida" : "vencidas") · ahora: @Formato.Fecha(Model.Ahora), @Formato.Hora(Model.Ahora)</span>
     </div>
     <form asp-action="Index" method="get" class="busqueda">
         <div class="campo">

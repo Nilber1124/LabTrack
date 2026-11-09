@@ -1,11 +1,11 @@
 /* Pantalla de inicio de sesión (mockup 01). */
 .login { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; }
-.login-portada { background: var(--acento); color: #fff; padding: 64px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; }
+.login-portada { background: var(--acento); color: var(--sobre-acento); padding: 64px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; }
 .login-marca { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 20px; }
-.login-cuadro { width: 24px; height: 24px; background: #fff; }
-.login-portada h1 { font-size: clamp(44px, 6vw, 88px); line-height: .95; letter-spacing: -.03em; margin: 0 0 24px; color: #fff; }
+.login-logo { display: block; width: 56px; height: 56px; }
+.login-portada h1 { font-size: clamp(44px, 6vw, 88px); line-height: .95; letter-spacing: -.03em; margin: 0 0 24px; color: inherit; }
 .login-portada p { font-size: 20px; margin: 0; max-width: 520px; }
-.login-pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid #fff; font-size: 14px; }
+.login-pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--sobre-acento); font-size: 14px; }
 .login-pasos span { padding-top: 12px; }
 .login-panel { padding: 64px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .login-panel form { width: min(420px, 100%); }

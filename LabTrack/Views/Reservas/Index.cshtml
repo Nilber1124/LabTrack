@@ -5,7 +5,7 @@
 <div class="encabezado">
     <div>
         <h1>Mis reservas</h1>
-        <span class="ayuda">@Model.TotalGeneral reservas · @Model.TotalPendientes pendiente de aprobación</span>
+        <span class="ayuda">@Model.TotalGeneral @(Model.TotalGeneral == 1 ? "reserva" : "reservas") · @Model.TotalPendientes @(Model.TotalPendientes == 1 ? "pendiente" : "pendientes") de aprobación</span>
     </div>
     <a class="btn btn-secundario" asp-controller="Catalogo" asp-action="Index">Ir al catálogo<span aria-hidden="true">→</span></a>
 </div>

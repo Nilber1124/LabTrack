@@ -175,6 +175,7 @@ namespace LabTrack.Services
                     Total = total,
                     TamanoPagina = TamanoPaginaPropias,
                     Etiqueta = "reservas",
+                    EtiquetaSingular = "reserva",
                     Parametros = new() { ["estado"] = estado?.ToString() }
                 }
             };
@@ -201,7 +202,8 @@ namespace LabTrack.Services
                     Pagina = pagina,
                     Total = total,
                     TamanoPagina = TamanoPaginaSolicitudes,
-                    Etiqueta = "solicitudes"
+                    Etiqueta = "solicitudes",
+                    EtiquetaSingular = "solicitud"
                 }
             };
         }
