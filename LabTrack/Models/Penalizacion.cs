@@ -10,7 +10,7 @@ namespace LabTrack.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
 
-        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona una reserva válida.")]
+        [Range(typeof(long), "1", "9223372036854775807", ErrorMessage = "Selecciona una reserva vÃ¡lida.")]
         public long ReservaId { get; set; }
 
         [Column(TypeName = "datetime2")]
