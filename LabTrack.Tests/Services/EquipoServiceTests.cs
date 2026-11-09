@@ -216,6 +216,21 @@ namespace LabTrack.Tests.Services
         [Fact]
         [Trait("HU", "ADM")]
         [Trait("CA", "ADM-CA3")]
+        public async Task GuardarAsync_ServicioDeImagenesNoDisponible_NoCreaElEquipo()
+        {
+            _imagenes.GuardarAsync(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((string?)null);
+
+            var resultado = await GuardarAsync(Datos(), ImagenJpeg());
+
+            Assert.Equal(Mensajes.ImagenNoSubida, resultado.Mensaje);
+            Assert.Equal(Mensajes.ServicioImagenesNoDisponible, resultado.Aviso);
+            await using var contexto = BaseDatos.CrearContexto();
+            Assert.Equal(0, await contexto.Equipos.CountAsync());
+        }
+
+        [Fact]
+        [Trait("HU", "ADM")]
+        [Trait("CA", "ADM-CA3")]
         public async Task GuardarAsync_ContenidoQueNoEsImagen_SeRechazaSinGuardar()
         {
             var resultado = await GuardarAsync(Datos(), Imagen(1, 2, 3, 4));

@@ -169,6 +169,10 @@ namespace LabTrack.Services
 
             var fotoAnterior = equipo.FotoUrl;
             var fotoNueva = imagen is null ? null : await _imagenes.GuardarAsync(imagen.Contenido, extension!, cancellationToken);
+            if (imagen is not null && fotoNueva is null)
+            {
+                return ResultadoOperacion.Fallo(TipoResultado.Validacion, Mensajes.ImagenNoSubida, Mensajes.ServicioImagenesNoDisponible);
+            }
 
             equipo.Nombre = nombre;
             equipo.CodigoInventario = codigo;

@@ -46,6 +46,7 @@ namespace LabTrack.Reglas
         public const string CategoriaNoValida = "Selecciona una categoría válida";
         public const string ImagenNoSubida = "No se pudo subir la imagen";
         public const string ImagenNoValida = "El archivo supera los 2 MB o no es JPG/PNG. Elige otra imagen o guarda el equipo sin foto.";
+        public const string ServicioImagenesNoDisponible = "El servicio de imágenes no está disponible. Inténtalo más tarde o guarda el equipo sin foto.";
         public const string NoSePuedeDarDeBaja = "No se puede dar de baja";
         public const string EquipoYaDeBaja = "El equipo ya está de baja";
         public const string EquipoNoEstaDeBaja = "El equipo no está de baja";

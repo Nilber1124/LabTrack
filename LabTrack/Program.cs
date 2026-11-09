@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
+
+ArchivoEnv.Cargar();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +36,8 @@ builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<IEquipoService, EquipoService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-builder.Services.AddSingleton<IAlmacenImagenes, AlmacenImagenesLocal>();
+builder.Services.Configure<CloudinaryOpciones>(builder.Configuration.GetSection(CloudinaryOpciones.Seccion));
+builder.Services.AddSingleton<IAlmacenImagenes, AlmacenImagenesCloudinary>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(opciones =>
@@ -103,15 +105,6 @@ else
 {
     app.UseExceptionHandler("/Login/Error");
 }
-
-// Fotos subidas en tiempo de ejecución; son públicas como el resto de recursos estáticos.
-var carpetaImagenes = AlmacenImagenesLocal.CarpetaRaiz(app.Environment.ContentRootPath);
-Directory.CreateDirectory(carpetaImagenes);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(carpetaImagenes),
-    RequestPath = AlmacenImagenesLocal.RutaPublica
-});
 
 app.UseRouting();
 

@@ -18,7 +18,7 @@ docs/            plan-de-pruebas.md  matriz-trazabilidad.md
 .github/workflows/   CI
 ```
 
-Paquetes permitidos: EF Core (SqlServer), xUnit, NSubstitute, Microsoft.Extensions.TimeProvider.Testing y coverlet. Cualquier otro se justifica antes.
+Paquetes permitidos: EF Core (SqlServer), CloudinaryDotNet, xUnit, NSubstitute, Microsoft.Extensions.TimeProvider.Testing y coverlet. Cualquier otro se justifica antes.
 
 ## Comandos
 
@@ -32,7 +32,7 @@ jmeter -n -t tests/performance/catalogo.jmx -l tests/performance/resultados/resu
 
 Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERVER` (nunca en el repositorio) y fallan con un mensaje claro si no hay servidor.
 
-`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}`, `Semilla:Administrador:{Codigo,Nombre,Contrasena}`, `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}` y `Semilla:ContrasenaDemostracion` (estudiantes de simulación).
+`ConnectionStrings:DefaultConnection` está en `appsettings.json`; ajustar `Data Source` al servidor local. Los datos sensibles van en un archivo `.env` en la raíz (ignorado por Git; plantilla en `.env.example`), con `__` en lugar de `:`, y en Azure como variables de entorno. Las fotos necesitan `Cloudinary:{CloudName,ApiKey,ApiSecret}`. En Development, los usuarios de demostración van en User Secrets del proyecto web: `Semilla:Encargado:{Codigo,Nombre,Contrasena}`, `Semilla:Administrador:{Codigo,Nombre,Contrasena}`, `Semilla:Estudiantes:0:{Codigo,Nombre,Contrasena}` y `Semilla:ContrasenaDemostracion` (estudiantes de simulación).
 
 ## Reglas de datos
 
@@ -50,7 +50,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 
 - Controladores delgados que dependen de interfaces inyectadas: `IAutenticacionService`, `ICatalogoService`, `IReservaService`, `IDevolucionService`, `IEquipoService`, `IUsuarioService`. Sin capa de repositorios: los servicios usan `AppDbContext`.
 - `LoginController` (HU-01), `CatalogoController` (HU-02), `ReservasController` (HU-03 y "Mis reservas"), `SolicitudesController` (HU-04), `DevolucionesController` y `PenalizadosController` (HU-05), `EquiposController` y `UsuariosController` (solo administrador).
-- `AutenticacionService` CA-01 a 03; `CatalogoService` CA-04 a 06; `ReservaService` CA-08 a 13; `DevolucionService` CA-14 a 16 y penalizados; `EquipoService` gestión de equipos. Las fotos pasan por `IAlmacenImagenes` (hoy disco local; Cloudinary se conecta ahí).
+- `AutenticacionService` CA-01 a 03; `CatalogoService` CA-04 a 06; `ReservaService` CA-08 a 13; `DevolucionService` CA-14 a 16 y penalizados; `EquipoService` gestión de equipos. Las fotos se guardan en Cloudinary mediante `IAlmacenImagenes`.
 - `Reglas/`: clases pequeñas y deterministas, sin base de datos ni reloj propio (cruce de horarios, validación de fechas, política de bloqueo, política de penalización). Los servicios las orquestan con `AppDbContext` y `TimeProvider`.
 - Los errores de negocio se devuelven como resultados tipados (`ResultadoOperacion`), no como excepciones de control de flujo.
 - ViewModels en `ViewModels/`; no se envían entidades EF a vistas con lógica. Reciben Fecha + HoraInicio + HoraFin y el servicio compone `Inicio` y `Fin`.
@@ -81,7 +81,7 @@ Las pruebas de servicios leen la conexión de la variable `LABTRACK_TEST_SQLSERV
 - Política por defecto que exige usuario autenticado; solo `LoginController` usa `[AllowAnonymous]`. `[Authorize(Roles = "ESTUDIANTE")]` en catálogo y reservas; `[Authorize(Roles = "ENCARGADO,ADMINISTRADOR")]` en solicitudes, devoluciones y penalizados; `[Authorize(Roles = "ADMINISTRADOR")]` en equipos y usuarios.
 - `AutoValidateAntiforgeryTokenAttribute` y `ResponseCache(NoStore = true)` como filtros globales. Cookie `HttpOnly` con expiración deslizante.
 - `UseDeveloperExceptionPage` solo en Development; página de error genérica en producción.
-- La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales y los datos semilla van fuera: User Secrets en local, variables de entorno en Azure.
+- La cadena de conexión solo puede estar en el repositorio si no lleva contraseña (`Integrated Security`). Cualquier cadena con credenciales va en `.env` en local y los datos semilla en User Secrets; en Azure, variables de entorno.
 - El usuario que ejecuta una operación se obtiene de los claims, nunca del formulario.
 
 ## Convenciones

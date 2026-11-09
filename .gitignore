@@ -361,5 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-# Fotos de equipos subidas en local
-LabTrack/uploads/
+# Datos sensibles locales
+.env
+!.env.example
