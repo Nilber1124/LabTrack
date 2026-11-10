@@ -97,3 +97,5 @@ AGENTS.md         Reglas y decisiones de desarrollo del proyecto
 ## Despliegue
 
 Configura `ConnectionStrings__DefaultConnection` y las claves `Cloudinary__*` como variables de entorno, y no uses el entorno Development. Fuera de ese entorno no se crean datos de prueba, por lo que el primer administrador debe crearse directamente en la base de datos.
+
+La aplicación está publicada en Azure App Service. Cada push a `master` ejecuta las pruebas que no necesitan base de datos y, si pasan, despliega con [`desplegar-azure.yml`](.github/workflows/desplegar-azure.yml). Las migraciones pendientes se aplican al arrancar.

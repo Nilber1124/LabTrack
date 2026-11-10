@@ -1,0 +1,48 @@
+# Publica LabTrack en Azure App Service con cada push a master.
+# Azure autoriza a este repositorio por identidad federada: no se guarda ninguna contraseña.
+name: Desplegar en Azure
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Si llegan dos pushes seguidos, solo se publica el último.
+concurrency:
+  group: desplegar-azure
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Las pruebas de servicios necesitan SQL Server y se ejecutan aparte.
+      - name: Ejecutar pruebas sin base de datos
+        run: dotnet test LabTrack.Tests/LabTrack.Tests.csproj --filter "BD!=SQLServer" --nologo
+
+      - name: Publicar
+        run: |
+          dotnet publish LabTrack/LabTrack.csproj -c Release -o publicacion --nologo
+          rm -f publicacion/appsettings.Development.json
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: labtrack-upn
+          package: publicacion
