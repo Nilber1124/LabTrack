@@ -6,6 +6,8 @@ namespace LabTrack.ViewModels
 {
     public class FormularioEquipoViewModel
     {
+        // Debe llegar en el formulario (0 = nuevo); si falta, el modelo es inválido.
+        [BindRequired]
         public int IdEquipo { get; set; }
 
         [Required(ErrorMessage = "Escribe el nombre del equipo")]

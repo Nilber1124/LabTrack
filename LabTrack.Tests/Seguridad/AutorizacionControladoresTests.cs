@@ -106,5 +106,29 @@ namespace LabTrack.Tests.Seguridad
 
             Assert.Empty(inseguras);
         }
+
+        [Fact]
+        [Trait("HU", "HU-01")]
+        [Trait("CA", "CA-01")]
+        public void Controladores_NingunaAccion_IgnoraAntiforgery()
+        {
+            var sinProteccion = Controladores()
+                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                .Where(m => m.IsDefined(typeof(IgnoreAntiforgeryTokenAttribute)))
+                .Select(m => $"{m.DeclaringType!.Name}.{m.Name}");
+
+            Assert.Empty(sinProteccion);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-01")]
+        [Trait("CA", "CA-01")]
+        public void LoginError_SoloAceptaGet()
+        {
+            var accion = typeof(LoginController).GetMethod(nameof(LoginController.Error))!;
+
+            Assert.True(accion.IsDefined(typeof(HttpGetAttribute)));
+            Assert.False(accion.IsDefined(typeof(HttpPostAttribute)));
+        }
     }
 }

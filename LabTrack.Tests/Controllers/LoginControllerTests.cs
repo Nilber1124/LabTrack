@@ -40,6 +40,17 @@ namespace LabTrack.Tests.Controllers
         [Fact]
         [Trait("HU", "HU-01")]
         [Trait("CA", "CA-01")]
+        public void Error_ConIdentificador_MuestraVistaConEseIdYEstado500()
+        {
+            var resultado = Assert.IsType<ViewResult>(_controlador.Error("traza-123"));
+
+            Assert.Equal("traza-123", Assert.IsType<ErrorViewModel>(resultado.Model).RequestId);
+            Assert.Equal(StatusCodes.Status500InternalServerError, _controlador.Response.StatusCode);
+        }
+
+        [Fact]
+        [Trait("HU", "HU-01")]
+        [Trait("CA", "CA-01")]
         public void Index_Anonimo_MuestraFormulario()
         {
             var resultado = Assert.IsType<ViewResult>(_controlador.Index());

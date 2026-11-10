@@ -75,11 +75,12 @@ namespace LabTrack.Controllers
             return View();
         }
 
-        // Sin restricción de verbo: el manejador de excepciones reejecuta la petición original.
-        [IgnoreAntiforgeryToken]
-        public IActionResult Error()
+        // El manejador de excepciones redirige aquí con GET (ver Program.cs).
+        [HttpGet]
+        public IActionResult Error(string? id)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            Response.StatusCode = StatusCodes.Status500InternalServerError;
+            return View(new ErrorViewModel { RequestId = id ?? Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
         private Task IniciarSesionAsync(UsuarioAutenticado usuario)

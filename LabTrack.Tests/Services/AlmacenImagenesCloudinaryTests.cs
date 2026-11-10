@@ -25,7 +25,10 @@ namespace LabTrack.Tests.Services
         [Trait("CA", "ADM-CA3")]
         public async Task EliminarAsync_SinCredenciales_NoFalla()
         {
-            await SinCredenciales().EliminarAsync("https://res.cloudinary.com/demo/image/upload/v1/abc.jpg");
+            var excepcion = await Record.ExceptionAsync(
+                () => SinCredenciales().EliminarAsync("https://res.cloudinary.com/demo/image/upload/v1/abc.jpg"));
+
+            Assert.Null(excepcion);
         }
 
         [Theory]

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using LabTrack.Reglas;
 using System.ComponentModel.DataAnnotations;
 
@@ -5,6 +6,8 @@ namespace LabTrack.ViewModels
 {
     public class FormularioUsuarioViewModel : IValidatableObject
     {
+        // Debe llegar en el formulario (0 = nuevo); si falta, el modelo es inválido.
+        [BindRequired]
         public int IdUsuario { get; set; }
 
         [Required(ErrorMessage = "Escribe el código del usuario")]

@@ -14,14 +14,14 @@
         error.hidden = !invalido;
         boton.disabled = invalido;
         fin.setAttribute("aria-invalid", String(invalido));
-        const horas = parseInt(fin.value, 10) - parseInt(inicio.value, 10);
+        const horas = Number.parseInt(fin.value, 10) - Number.parseInt(inicio.value, 10);
         duracion.textContent = invalido ? "" : `Duración: ${horas} ${horas === 1 ? "hora" : "horas"}`;
     };
 
     const seleccion = document.getElementById("ocupacion-seleccion");
     const pintarSeleccion = () => {
-        const desde = parseInt(inicio.value, 10);
-        const hasta = parseInt(fin.value, 10);
+        const desde = Number.parseInt(inicio.value, 10);
+        const hasta = Number.parseInt(fin.value, 10);
         seleccion.hidden = hasta <= desde;
         seleccion.style.left = `${(desde - 7) / 14 * 100}%`;
         seleccion.style.width = `${(hasta - desde) / 14 * 100}%`;

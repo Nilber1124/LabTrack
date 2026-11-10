@@ -103,7 +103,13 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Login/Error");
+    // Ante un error se redirige con GET a la página de error: así no hace falta desactivar la
+    // validación antiforgery para reejecutar una petición POST que falló.
+    app.UseExceptionHandler(manejo => manejo.Run(contexto =>
+    {
+        contexto.Response.Redirect($"/Login/Error?id={Uri.EscapeDataString(contexto.TraceIdentifier)}");
+        return Task.CompletedTask;
+    }));
 }
 
 app.UseRouting();
@@ -120,4 +126,4 @@ app.MapControllerRoute(
     pattern: "{controller=Login}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Run();
+await app.RunAsync();
